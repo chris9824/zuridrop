@@ -1,0 +1,21 @@
+{
+  "name": "@zuridrop/ui",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "rimraf dist tsconfig.tsbuildinfo",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --fix",
+    "dev": "tsc --build --watch"
+  },
+  "dependencies": {
+    "react": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "typescript": "^5.4.0",
+    "rimraf": "^5.0.0"
+  }
+}

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/customer/providers';
+import { CartProvider } from '@/components/cart/cart-provider';
+import { CartConflictDialog } from '@/components/cart/cart-conflict-dialog';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -20,7 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <CartProvider>
+            {children}
+            <CartConflictDialog />
+          </CartProvider>
         </ThemeProvider>
       </body>
     </html>

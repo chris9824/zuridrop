@@ -1,14 +1,15 @@
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Clock, Phone } from 'lucide-react';
 import { getRestaurantById, NotFoundError } from '@/lib/api/restaurants';
-import type { ApiRestaurant } from '@/lib/api/schemas';
+import type { ApiRestaurantDetail } from '@/lib/api/schemas';
+import { RestaurantMenuSection } from '@/components/menu/restaurant-menu-section';
 
 interface Props {
   params: { id: string };
 }
 
 export default async function RestaurantDetailPage({ params }: Props) {
-  let restaurant: ApiRestaurant | null = null;
+  let restaurant: ApiRestaurantDetail | null = null;
   let error: string | null = null;
   let notFound = false;
 
@@ -24,7 +25,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-10">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
@@ -112,59 +113,20 @@ export default async function RestaurantDetailPage({ params }: Props) {
                 )}
               </div>
 
-              {/* Address */}
               {restaurant.address && (
                 <p className="text-sm text-muted-foreground">{restaurant.address}</p>
               )}
 
-              {/* Description */}
               {restaurant.description && (
                 <p className="text-sm leading-relaxed text-foreground">{restaurant.description}</p>
               )}
 
-              {/* Menu section placeholder */}
-              <section className="mt-8">
-                <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground">Menu</h2>
-                {restaurant.menuItems && restaurant.menuItems.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {restaurant.menuItems.map((item: Record<string, unknown>) => {
-                      const name = String(item.name ?? 'Sans nom');
-                      const desc = item.description ? String(item.description) : null;
-                      const price = item.price !== undefined ? Number(item.price) : null;
-                      const available = item.isAvailable !== false;
-                      return (
-                        <div
-                          key={String(item.id ?? name)}
-                          className="rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-sm"
-                        >
-                          <h3 className="text-sm font-semibold text-foreground">{name}</h3>
-                          {desc && (
-                            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                              {desc}
-                            </p>
-                          )}
-                          <div className="mt-2 flex items-center justify-between">
-                            {price !== null && (
-                              <span className="text-sm font-bold text-primary">
-                                {price.toLocaleString('fr-FR')} F
-                              </span>
-                            )}
-                            {!available && (
-                              <span className="text-[10px] font-medium text-destructive">
-                                Indisponible
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Le menu de ce restaurant sera bientôt disponible.
-                  </p>
-                )}
-              </section>
+              {/* Menu — client component for cart interactivity */}
+              <RestaurantMenuSection
+                menuItems={restaurant.menuItems}
+                restaurantId={restaurant.id}
+                restaurantName={restaurant.name}
+              />
             </div>
           </div>
         )}
@@ -173,7 +135,6 @@ export default async function RestaurantDetailPage({ params }: Props) {
   );
 }
 
-/** Deterministic hue from id string */
 function hashHue(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) {

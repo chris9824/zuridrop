@@ -1,0 +1,70 @@
+'use client';
+
+import { Header } from '@/components/customer/header';
+import { CategoryRow } from '@/components/customer/category-row';
+import { FilterRow } from '@/components/customer/filter-row';
+import { FeaturedCarousel } from '@/components/customer/featured-carousel';
+import { RestaurantGrid } from '@/components/customer/restaurant-grid';
+import { MobileBottomNav } from '@/components/customer/mobile-bottom-nav';
+import { AlertTriangle, UtensilsCrossed } from 'lucide-react';
+import type { Restaurant } from '@/lib/types';
+
+interface HomeContentProps {
+  featured: Restaurant[];
+  recommended: Restaurant[];
+  all: Restaurant[];
+  error: string | null;
+}
+
+export function HomeContent({ featured, recommended, all, error }: HomeContentProps) {
+  const isEmpty = !error && all.length === 0;
+
+  return (
+    <div className="min-h-screen bg-background pb-20 md:pb-8">
+      <Header />
+
+      {/* Sticky filter bar */}
+      <div className="sticky top-[calc(var(--header-h,57px))] z-40 border-b border-border bg-background/80 backdrop-blur-lg">
+        <div className="mx-auto max-w-7xl space-y-1 py-2">
+          <CategoryRow />
+          <FilterRow />
+        </div>
+      </div>
+
+      {/* Main content */}
+      <main className="mx-auto max-w-7xl">
+        {/* Error state */}
+        {error && (
+          <div className="mx-4 mt-10 flex flex-col items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-8 text-center md:mx-0">
+            <AlertTriangle className="h-10 w-10 text-destructive" />
+            <p className="text-base font-medium text-foreground">{error}</p>
+            <p className="text-sm text-muted-foreground">
+              Vérifiez que le backend est lancé sur le port 3001.
+            </p>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {isEmpty && (
+          <div className="mx-4 mt-10 flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-8 text-center md:mx-0">
+            <UtensilsCrossed className="h-10 w-10 text-muted-foreground" />
+            <p className="text-base font-medium text-foreground">Aucun restaurant trouvé.</p>
+            <p className="text-sm text-muted-foreground">
+              Essayez de modifier vos filtres ou revenez plus tard.
+            </p>
+          </div>
+        )}
+
+        {/* Data loaded successfully */}
+        {!error && !isEmpty && (
+          <>
+            <FeaturedCarousel restaurants={featured} />
+            <RestaurantGrid recommended={recommended} all={all} />
+          </>
+        )}
+      </main>
+
+      <MobileBottomNav />
+    </div>
+  );
+}

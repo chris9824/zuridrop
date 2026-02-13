@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   ZuriDrop Design Tokens — shadcn/ui compatible
+   ============================================================
+   Brand color = --primary / --ring
+   Pour changer la couleur brand :
+     1. Modifie --primary (HSL) dans :root ET .dark
+     2. Modifie --ring (même valeur que --primary)
+     3. Optionnel : ajuste --primary-foreground pour le contraste
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* ── Surfaces ─────────────────────────────────── */
+    --background: 40 20% 99%;          /* blanc cassé chaud, pas bleu/froid */
+    --foreground: 240 10% 8%;          /* noir encre lisible, pas pur #000  */
+
+    --card: 0 0% 100%;                 /* cards blanches pures              */
+    --card-foreground: 240 10% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 8%;
+
+    /* ── Brand ────────────────────────────────────── */
+    --primary: 152 60% 40%;            /* vert ZuriDrop — riche & lisible   */
+    --primary-foreground: 0 0% 100%;
+
+    /* ── Secondaires / Muted / Accent ─────────────── */
+    --secondary: 240 5% 96%;           /* gris très clair pour badges/chips */
+    --secondary-foreground: 240 6% 15%;
+
+    --muted: 240 5% 96%;               /* fonds atténués                    */
+    --muted-foreground: 240 4% 46%;    /* texte léger mais accessible (4.5:1) */
+
+    --accent: 240 5% 94%;              /* hover/focus léger                 */
+    --accent-foreground: 240 6% 15%;
+
+    /* ── Feedback ─────────────────────────────────── */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* ── Bordures & Inputs ────────────────────────── */
+    --border: 240 6% 90%;              /* séparateurs subtils               */
+    --input: 240 6% 90%;               /* contour inputs                    */
+    --ring: 152 60% 40%;               /* focus ring = brand                */
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* ── Surfaces ─────────────────────────────────── */
+    --background: 220 15% 6%;          /* charcoal profond, légèrement bleuté */
+    --foreground: 220 10% 93%;         /* blanc cassé chaud, pas pur #fff  */
+
+    --card: 220 12% 10%;               /* cards un cran plus claires        */
+    --card-foreground: 220 10% 93%;
+
+    --popover: 220 12% 10%;
+    --popover-foreground: 220 10% 93%;
+
+    /* ── Brand ────────────────────────────────────── */
+    --primary: 152 55% 48%;            /* vert un poil plus lumineux en dark */
+    --primary-foreground: 0 0% 100%;
+
+    /* ── Secondaires / Muted / Accent ─────────────── */
+    --secondary: 220 10% 15%;
+    --secondary-foreground: 220 10% 90%;
+
+    --muted: 220 10% 15%;
+    --muted-foreground: 220 8% 55%;    /* texte atténué lisible (5:1+)      */
+
+    --accent: 220 10% 17%;
+    --accent-foreground: 220 10% 90%;
+
+    /* ── Feedback ─────────────────────────────────── */
+    --destructive: 0 62% 55%;          /* rouge plus doux sur fond sombre   */
+    --destructive-foreground: 0 0% 100%;
+
+    /* ── Bordures & Inputs ────────────────────────── */
+    --border: 220 10% 18%;             /* border très subtil                */
+    --input: 220 10% 18%;
+    --ring: 152 55% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    min-height: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    min-height: 100dvh;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Sélection texte — brand color */
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+  }
+
+  /* Focus visible global — accessibility */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+/* Hide scrollbar for horizontal scroll containers */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

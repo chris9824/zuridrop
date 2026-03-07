@@ -33,9 +33,11 @@ enum OrderStatus {
 
 enum DeliveryStatus {
   ASSIGNED
+  ACCEPTED
   PICKED_UP
   IN_TRANSIT
   DELIVERED
+  CANCELLED
 }
 
 enum PaymentMethod {
@@ -185,8 +187,13 @@ model Delivery {
   orderId        String         @unique @map("order_id")
   driverId       String         @map("driver_id")
   status         DeliveryStatus @default(ASSIGNED)
+  assignedAt     DateTime       @default(now()) @map("assigned_at")
+  acceptedAt     DateTime?      @map("accepted_at")
   pickedUpAt     DateTime?      @map("picked_up_at")
+  startedAt      DateTime?      @map("started_at")
   deliveredAt    DateTime?      @map("delivered_at")
+  cancelledAt    DateTime?      @map("cancelled_at")
+  notes          String?
   deliveryFee    Float          @default(0) @map("delivery_fee")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")

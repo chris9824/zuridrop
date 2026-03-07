@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
@@ -10,10 +11,16 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 import { OrderStatus, PaymentMethod, Role } from '@prisma/client';
 import { validateTransition } from '../../common/utils/order-transitions';
 import { isRestaurantOpenNow } from '../../common/utils/restaurant-hours';
+import { DispatchService } from '../delivery/dispatch.service';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(OrdersService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private dispatchService: DispatchService,
+  ) {}
 
   async create(customerId: string, dto: CreateOrderDto) {
     // Validate restaurant exists and is open
@@ -112,7 +119,11 @@ export class OrdersService {
         include: {
           items: { include: { menuItem: true } },
           restaurant: { select: { id: true, name: true } },
-          delivery: true,
+          delivery: {
+            include: {
+              driver: { select: { id: true, firstName: true, lastName: true } },
+            },
+          },
         },
       }),
       this.prisma.order.count({ where }),
@@ -154,7 +165,11 @@ export class OrdersService {
         customer: { select: { id: true, firstName: true, lastName: true, email: true } },
         restaurant: { select: { id: true, name: true, merchantId: true } },
         deliveryAddress: true,
-        delivery: true,
+        delivery: {
+          include: {
+            driver: { select: { id: true, firstName: true, lastName: true } },
+          },
+        },
       },
     });
     if (!order) throw new NotFoundException('Commande non trouvée');
@@ -194,16 +209,44 @@ export class OrdersService {
       throw new BadRequestException(result.reason);
     }
 
-    return this.prisma.order.update({
+    const updated = await this.prisma.order.update({
       where: { id: orderId },
       data: { status: dto.status },
       include: {
         items: { include: { menuItem: true } },
         customer: { select: { id: true, firstName: true, lastName: true, email: true } },
         restaurant: { select: { id: true, name: true } },
-        delivery: true,
+        delivery: {
+          include: {
+            driver: { select: { id: true, firstName: true, lastName: true } },
+          },
+        },
       },
     });
+
+    if (dto.status === OrderStatus.READY_FOR_PICKUP) {
+      const dispatchResult = await this.dispatchService.dispatchOrder(orderId);
+      this.logger.log(`Auto-dispatch pour commande ${orderId}: ${dispatchResult.dispatched ? 'OK → ' + dispatchResult.driverName : dispatchResult.reason}`);
+
+      if (dispatchResult.dispatched) {
+        const refreshed = await this.prisma.order.findUnique({
+          where: { id: orderId },
+          include: {
+            items: { include: { menuItem: true } },
+            customer: { select: { id: true, firstName: true, lastName: true, email: true } },
+            restaurant: { select: { id: true, name: true } },
+            delivery: {
+              include: {
+                driver: { select: { id: true, firstName: true, lastName: true } },
+              },
+            },
+          },
+        });
+        return refreshed ?? updated;
+      }
+    }
+
+    return updated;
   }
 
   // ─── Helpers réutilisés par MerchantOrdersService ──────

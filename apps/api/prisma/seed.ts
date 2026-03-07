@@ -40,7 +40,7 @@ async function main() {
 
   const driver = await prisma.user.upsert({
     where: { email: 'driver1@test.com' },
-    update: {},
+    update: { isOnline: true },
     create: {
       email: 'driver1@test.com',
       password: passwordHash,
@@ -48,9 +48,12 @@ async function main() {
       lastName: 'Ouattara',
       phone: '+225 03 03 03 03',
       role: Role.DRIVER,
+      isOnline: true,
+      latitude: 5.3450,
+      longitude: -4.0200,
     },
   });
-  console.log(`  ✅ Driver: ${driver.email}`);
+  console.log(`  ✅ Driver: ${driver.email} (online)`);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin1@test.com' },
@@ -98,7 +101,7 @@ async function main() {
 
   const driver2 = await prisma.user.upsert({
     where: { email: 'driver2@test.com' },
-    update: {},
+    update: { isOnline: true },
     create: {
       email: 'driver2@test.com',
       password: passwordHash,
@@ -106,9 +109,29 @@ async function main() {
       lastName: 'Bakayoko',
       phone: '+225 13 13 13 13',
       role: Role.DRIVER,
+      isOnline: true,
+      latitude: 5.3380,
+      longitude: -4.0150,
     },
   });
-  console.log(`  ✅ Driver 2: ${driver2.email}`);
+  console.log(`  ✅ Driver 2: ${driver2.email} (online)`);
+
+  const driver3 = await prisma.user.upsert({
+    where: { email: 'driver3@test.com' },
+    update: {},
+    create: {
+      email: 'driver3@test.com',
+      password: passwordHash,
+      firstName: 'Koffi',
+      lastName: 'Yao',
+      phone: '+225 14 14 14 14',
+      role: Role.DRIVER,
+      isOnline: false,
+      latitude: 5.3500,
+      longitude: -4.0300,
+    },
+  });
+  console.log(`  ✅ Driver 3: ${driver3.email} (offline — pour tester indisponibilité)`);
 
   // ─── Address for customer ─────────────────────────────
 
@@ -310,8 +333,9 @@ async function main() {
   console.log('   customer2@test.com  (CUSTOMER)');
   console.log('   merchant1@test.com  (MERCHANT)');
   console.log('   merchant2@test.com  (MERCHANT)');
-  console.log('   driver1@test.com    (DRIVER)');
-  console.log('   driver2@test.com    (DRIVER)');
+  console.log('   driver1@test.com    (DRIVER — online)');
+  console.log('   driver2@test.com    (DRIVER — online)');
+  console.log('   driver3@test.com    (DRIVER — offline)');
   console.log('   admin1@test.com     (ADMIN)');
 }
 

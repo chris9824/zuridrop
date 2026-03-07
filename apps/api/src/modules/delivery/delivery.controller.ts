@@ -81,7 +81,7 @@ export class DeliveryController {
   })
   @ApiParam({ name: 'orderId', description: 'ID de la commande' })
   pickup(@CurrentUser() user: any, @Param('orderId') orderId: string) {
-    return this.deliveryService.pickupOrder(user.id, orderId);
+    return this.deliveryService.pickupOrderLegacy(user.id, orderId);
   }
 
   @Post(':orderId/start')
@@ -93,7 +93,7 @@ export class DeliveryController {
   })
   @ApiParam({ name: 'orderId', description: 'ID de la commande' })
   start(@CurrentUser() user: any, @Param('orderId') orderId: string) {
-    return this.deliveryService.startDelivery(user.id, orderId);
+    return this.deliveryService.startDeliveryLegacy(user.id, orderId);
   }
 
   @Post(':orderId/complete')
@@ -106,7 +106,7 @@ export class DeliveryController {
   })
   @ApiParam({ name: 'orderId', description: 'ID de la commande' })
   complete(@CurrentUser() user: any, @Param('orderId') orderId: string) {
-    return this.deliveryService.completeDelivery(user.id, orderId);
+    return this.deliveryService.completeDeliveryLegacy(user.id, orderId);
   }
 
   // ─── Legacy (backward compat) ──────────────────────

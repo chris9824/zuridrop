@@ -89,7 +89,8 @@ export const OrderItemSchema = z.object({
   id: z.string(),
   menuItemId: z.string(),
   quantity: z.number(),
-  priceAtOrder: z.number(),
+  priceAtOrder: z.number().optional().nullable(),
+  unitPrice: z.number().optional().nullable(),
   menuItem: z.object({
     id: z.string(),
     name: z.string(),

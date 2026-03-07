@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, MapPin, LogOut, LogIn } from 'lucide-react';
+import { User, MapPin, LogOut, LogIn, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isLoggedIn, clearToken } from '@/lib/api/auth';
 
@@ -18,7 +18,6 @@ export function AccountMenu() {
     setAuthenticated(isLoggedIn());
   }, [open]);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
@@ -51,6 +50,11 @@ export function AccountMenu() {
     router.push(`/checkout${from}`);
   }, [router, pathname]);
 
+  const navigateTo = useCallback((path: string) => {
+    setOpen(false);
+    router.push(path);
+  }, [router]);
+
   return (
     <div ref={menuRef} className="relative">
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.93 }}>
@@ -79,7 +83,15 @@ export function AccountMenu() {
             {authenticated ? (
               <>
                 <button
-                  onClick={() => { setOpen(false); router.push('/account/addresses'); }}
+                  onClick={() => navigateTo('/orders')}
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent"
+                >
+                  <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                  Mes commandes
+                </button>
+                <div className="border-t border-border" />
+                <button
+                  onClick={() => navigateTo('/account/addresses')}
                   className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent"
                 >
                   <MapPin className="h-4 w-4 text-muted-foreground" />

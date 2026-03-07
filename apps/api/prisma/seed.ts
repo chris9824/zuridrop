@@ -182,6 +182,111 @@ async function main() {
   });
   console.log(`  ✅ Menu Item: ${menuItem2.name}`);
 
+  // ─── Restaurant 2 — Pizza Napoli ────────────────────
+
+  const restaurant2 = await prisma.restaurant.upsert({
+    where: { id: 'seed-restaurant-2' },
+    update: {},
+    create: {
+      id: 'seed-restaurant-2',
+      merchantId: merchant.id,
+      name: 'Pizza Napoli',
+      description: 'Pizzas artisanales italiennes',
+      phone: '+225 06 06 06 06',
+      street: '12 Avenue Chardy',
+      city: 'Abidjan',
+      latitude: 5.3200,
+      longitude: -4.0170,
+      isOpen: true,
+      openingTime: '10:00',
+      closingTime: '22:30',
+    },
+  });
+  console.log(`  ✅ Restaurant: ${restaurant2.name}`);
+
+  for (const item of [
+    { id: 'seed-menu-item-3', name: 'Margherita', description: 'Pizza tomate mozzarella basilic', price: 4500, category: 'Pizzas' },
+    { id: 'seed-menu-item-4', name: 'Pizza Pepperoni', description: 'Pizza pepperoni fromage', price: 5500, category: 'Pizzas' },
+    { id: 'seed-menu-item-5', name: 'Pizza 4 Fromages', description: 'Mozzarella gorgonzola parmesan chèvre', price: 6000, category: 'Pizzas' },
+  ] as const) {
+    const mi = await prisma.menuItem.upsert({
+      where: { id: item.id },
+      update: {},
+      create: { ...item, restaurantId: restaurant2.id, isAvailable: true },
+    });
+    console.log(`  ✅ Menu Item: ${mi.name}`);
+  }
+
+  // ─── Restaurant 3 — Burger Factory ──────────────────
+
+  const restaurant3 = await prisma.restaurant.upsert({
+    where: { id: 'seed-restaurant-3' },
+    update: {},
+    create: {
+      id: 'seed-restaurant-3',
+      merchantId: merchant2.id,
+      name: 'Burger Factory',
+      description: 'Burgers gourmets et frites maison',
+      phone: '+225 07 07 07 07',
+      street: '8 Rue du Commerce',
+      city: 'Abidjan',
+      latitude: 5.3150,
+      longitude: -4.0200,
+      isOpen: true,
+      openingTime: '11:00',
+      closingTime: '23:00',
+    },
+  });
+  console.log(`  ✅ Restaurant: ${restaurant3.name}`);
+
+  for (const item of [
+    { id: 'seed-menu-item-6', name: 'Classic Burger', description: 'Steak cheddar salade tomate', price: 3500, category: 'Burgers' },
+    { id: 'seed-menu-item-7', name: 'Double Bacon Burger', description: 'Double steak bacon cheddar', price: 4800, category: 'Burgers' },
+    { id: 'seed-menu-item-8', name: 'Chicken Burger', description: 'Poulet croustillant sauce maison', price: 3200, category: 'Burgers' },
+  ] as const) {
+    const mi = await prisma.menuItem.upsert({
+      where: { id: item.id },
+      update: {},
+      create: { ...item, restaurantId: restaurant3.id, isAvailable: true },
+    });
+    console.log(`  ✅ Menu Item: ${mi.name}`);
+  }
+
+  // ─── Restaurant 4 — Mama Africa Kitchen ─────────────
+
+  const restaurant4 = await prisma.restaurant.upsert({
+    where: { id: 'seed-restaurant-4' },
+    update: {},
+    create: {
+      id: 'seed-restaurant-4',
+      merchantId: merchant2.id,
+      name: 'Mama Africa Kitchen',
+      description: 'Cuisine africaine authentique',
+      phone: '+225 08 08 08 08',
+      street: '25 Boulevard Lagunaire',
+      city: 'Abidjan',
+      latitude: 5.3300,
+      longitude: -4.0100,
+      isOpen: true,
+      openingTime: '09:00',
+      closingTime: '22:00',
+    },
+  });
+  console.log(`  ✅ Restaurant: ${restaurant4.name}`);
+
+  for (const item of [
+    { id: 'seed-menu-item-9', name: 'Poulet Yassa', description: 'Poulet mariné citron oignons', price: 4000, category: 'Plats africains' },
+    { id: 'seed-menu-item-10', name: 'Riz Jollof', description: 'Riz épicé ouest africain', price: 3000, category: 'Plats africains' },
+    { id: 'seed-menu-item-11', name: 'Poisson Braisé', description: 'Poisson grillé sauce piment', price: 5000, category: 'Plats africains' },
+  ] as const) {
+    const mi = await prisma.menuItem.upsert({
+      where: { id: item.id },
+      update: {},
+      create: { ...item, restaurantId: restaurant4.id, isAvailable: true },
+    });
+    console.log(`  ✅ Menu Item: ${mi.name}`);
+  }
+
   // ─── Promotion ────────────────────────────────────────
 
   await prisma.promotion.upsert({

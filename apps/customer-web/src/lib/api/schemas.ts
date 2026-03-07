@@ -84,7 +84,23 @@ export const AddressSchema = z.object({
 
 export type ApiAddress = z.infer<typeof AddressSchema>;
 
-/* ── Order (create response) ──────────────────────── */
+/* ── Order Item ───────────────────────────────────── */
+export const OrderItemSchema = z.object({
+  id: z.string(),
+  menuItemId: z.string(),
+  quantity: z.number(),
+  priceAtOrder: z.number(),
+  menuItem: z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional().nullable(),
+    price: z.number(),
+  }).optional().nullable(),
+});
+
+export type ApiOrderItem = z.infer<typeof OrderItemSchema>;
+
+/* ── Order (create response — simple) ────────────── */
 export const OrderResponseSchema = z.object({
   id: z.string(),
   status: z.string(),
@@ -93,9 +109,53 @@ export const OrderResponseSchema = z.object({
   restaurantId: z.string().optional(),
   customerId: z.string().optional(),
   createdAt: z.string().optional().nullable(),
-}).passthrough(); // tolérant aux champs supplémentaires
+}).passthrough();
 
 export type ApiOrderResponse = z.infer<typeof OrderResponseSchema>;
+
+/* ── Order (full detail) ─────────────────────────── */
+export const OrderDetailSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  totalAmount: z.number().optional().nullable(),
+  deliveryFee: z.number().optional().nullable(),
+  paymentMethod: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  restaurantId: z.string().optional(),
+  customerId: z.string().optional(),
+  createdAt: z.string().optional().nullable(),
+  updatedAt: z.string().optional().nullable(),
+  items: z.array(OrderItemSchema).default([]),
+  restaurant: z.object({
+    id: z.string(),
+    name: z.string(),
+  }).optional().nullable(),
+  customer: z.object({
+    id: z.string(),
+    firstName: z.string().optional().nullable(),
+    lastName: z.string().optional().nullable(),
+    email: z.string().optional().nullable(),
+  }).optional().nullable(),
+  deliveryAddress: AddressSchema.optional().nullable(),
+  delivery: z.object({
+    id: z.string(),
+    status: z.string(),
+    driverId: z.string().optional().nullable(),
+  }).optional().nullable(),
+}).passthrough();
+
+export type ApiOrderDetail = z.infer<typeof OrderDetailSchema>;
+
+/* ── Orders list response ────────────────────────── */
+export const OrdersListResponseSchema = z.object({
+  data: z.array(OrderDetailSchema),
+  total: z.number().optional(),
+  page: z.number().optional(),
+  limit: z.number().optional(),
+  totalPages: z.number().optional(),
+});
+
+export type ApiOrdersListResponse = z.infer<typeof OrdersListResponseSchema>;
 
 /* ── Auth login response ──────────────────────────── */
 export const LoginResponseSchema = z.object({

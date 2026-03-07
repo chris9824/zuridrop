@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { LogIn, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,19 @@ import { login } from '@/lib/api/auth';
 
 interface LoginFormProps {
   onSuccess: () => void;
+  /** If set, redirect here after successful login instead of calling onSuccess only */
+  redirectTo?: string;
+  title?: string;
+  description?: string;
 }
 
-export function LoginForm({ onSuccess }: LoginFormProps) {
+export function LoginForm({
+  onSuccess,
+  redirectTo,
+  title = 'Connectez-vous pour continuer',
+  description = 'Veuillez vous connecter pour finaliser votre commande.',
+}: LoginFormProps) {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +34,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     try {
       await login(email, password);
       onSuccess();
+      if (redirectTo) {
+        router.push(redirectTo);
+        router.refresh();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur de connexion.');
     } finally {
@@ -38,10 +53,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     >
       <div className="mb-4 flex items-center gap-2">
         <LogIn className="h-5 w-5 text-primary" />
-        <h2 className="text-base font-semibold text-foreground">Connexion requise</h2>
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        Connectez-vous pour passer votre commande.
+        {description}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-3">

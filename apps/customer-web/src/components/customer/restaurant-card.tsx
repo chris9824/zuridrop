@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Heart, Clock, Bike } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getRestaurantAvailability, AVAILABILITY_BADGE_STYLES } from '@/lib/availability';
 import type { Restaurant } from '@/lib/types';
 
 /* ── Skeleton variant ─────────────────────────────── */
@@ -32,6 +33,8 @@ interface RestaurantCardProps {
 export function RestaurantCard({ restaurant, variant = 'compact' }: RestaurantCardProps) {
   const [liked, setLiked] = useState(false);
   const isWide = variant === 'wide';
+  const availability = getRestaurantAvailability({ isOpen: restaurant.isOpen });
+  const isClosed = !availability.canOrder;
 
   return (
     <Link
@@ -40,13 +43,14 @@ export function RestaurantCard({ restaurant, variant = 'compact' }: RestaurantCa
       className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <motion.div
-        whileHover={{ y: -4, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
-        whileTap={{ scale: 0.985 }}
+        whileHover={isClosed ? undefined : { y: -4, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
+        whileTap={isClosed ? undefined : { scale: 0.985 }}
         className={cn(
           'group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card',
           'shadow-sm transition-shadow duration-200',
-          'hover:shadow-lg hover:shadow-black/5',
-          'dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-black/25 dark:hover:border-border/80',
+          isClosed
+            ? 'opacity-70'
+            : 'hover:shadow-lg hover:shadow-black/5 dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-black/25 dark:hover:border-border/80',
           isWide ? 'flex gap-0' : '',
         )}
       >
@@ -58,15 +62,23 @@ export function RestaurantCard({ restaurant, variant = 'compact' }: RestaurantCa
           )}
           style={{ background: restaurant.image }}
         >
-          {/* Subtle zoom on hover */}
           <div
             className="absolute inset-0 transition-transform duration-300 ease-out group-hover:scale-[1.03]"
             style={{ background: restaurant.image }}
           />
-          {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent dark:from-black/50" />
 
-          {/* Heart button — stops navigation */}
+          {/* Availability badge */}
+          <span
+            className={cn(
+              'absolute left-2 top-2 z-10 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+              AVAILABILITY_BADGE_STYLES[availability.status],
+            )}
+          >
+            {availability.label}
+          </span>
+
+          {/* Heart button */}
           <motion.button
             whileTap={{ scale: 0.75 }}
             onClick={(e) => {

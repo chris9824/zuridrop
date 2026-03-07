@@ -33,18 +33,15 @@ export function adaptRestaurantToCard(r: ApiRestaurant, index: number): Restaura
     id: r.id,
     name: r.name,
     image: GRADIENTS[h % GRADIENTS.length],
-    // Mock rating: deterministic 4.0–4.9 from id
     rating: Math.round((40 + (h % 10)) * 10) / 100,
     ratingCount: 50 + (h % 400),
-    // Mock delivery fee
     deliveryFee: [0, 500, 600, 750, 800, 1000][h % 6],
-    // Mock ETA
     etaMin: 10 + (h % 25),
-    // Tags from city / description / or fallback
     tags: buildTags(r),
-    // First 6 are "featured", rest "recommended" for now
     isFeatured: index < 6,
     isRecommended: index >= 3,
+    isOpen: r.isOpen ?? null,
+    _searchText: buildSearchText(r),
   };
 }
 
@@ -54,4 +51,21 @@ function buildTags(r: ApiRestaurant): string[] {
   if (r.isOpen) tags.push('Ouvert');
   if (tags.length === 0) tags.push('Restaurant');
   return tags.slice(0, 2);
+}
+
+function buildSearchText(r: ApiRestaurant): string {
+  const parts: string[] = [r.name];
+  if (r.description) parts.push(r.description);
+  if (r.city) parts.push(r.city);
+
+  const menuItems = r.menuItems as Array<{ name?: string; category?: string; description?: string }> | null | undefined;
+  if (Array.isArray(menuItems)) {
+    for (const item of menuItems) {
+      if (item.name) parts.push(item.name);
+      if (item.category) parts.push(item.category);
+      if (item.description) parts.push(item.description);
+    }
+  }
+
+  return parts.join(' ').toLowerCase();
 }

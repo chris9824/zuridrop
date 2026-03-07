@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
   useState,
@@ -32,11 +33,41 @@ type CartAction =
   | { type: 'INCREMENT'; menuItemId: string }
   | { type: 'DECREMENT'; menuItemId: string }
   | { type: 'CLEAR' }
-  | { type: 'REPLACE_AND_ADD'; payload: Omit<CartItem, 'qty'> };
+  | { type: 'REPLACE_AND_ADD'; payload: Omit<CartItem, 'qty'> }
+  | { type: 'HYDRATE'; payload: CartState };
+
+/* ── Persistence ──────────────────────────────────── */
+const STORAGE_KEY = 'zuridrop-cart';
+
+function saveToStorage(state: CartState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch { /* quota exceeded or SSR — ignore */ }
+}
+
+function loadFromStorage(): CartState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CartState;
+    if (!Array.isArray(parsed.items)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearStorage() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch { /* SSR — ignore */ }
+}
 
 /* ── Reducer ──────────────────────────────────────── */
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
+    case 'HYDRATE':
+      return action.payload;
     case 'ADD': {
       const existing = state.items.find((i) => i.menuItemId === action.payload.menuItemId);
       if (existing) {
@@ -61,14 +92,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         items: [{ ...action.payload, qty: 1 }],
       };
     }
-    case 'REMOVE':
+    case 'REMOVE': {
+      const filtered = state.items.filter((i) => i.menuItemId !== action.menuItemId);
       return {
         ...state,
-        items: state.items.filter((i) => i.menuItemId !== action.menuItemId),
-        ...(state.items.filter((i) => i.menuItemId !== action.menuItemId).length === 0
-          ? { restaurantId: null, restaurantName: null }
-          : {}),
+        items: filtered,
+        ...(filtered.length === 0 ? { restaurantId: null, restaurantName: null } : {}),
       };
+    }
     case 'INCREMENT':
       return {
         ...state,
@@ -80,11 +111,11 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       const item = state.items.find((i) => i.menuItemId === action.menuItemId);
       if (!item) return state;
       if (item.qty <= 1) {
-        const filtered = state.items.filter((i) => i.menuItemId !== action.menuItemId);
+        const remaining = state.items.filter((i) => i.menuItemId !== action.menuItemId);
         return {
           ...state,
-          items: filtered,
-          ...(filtered.length === 0 ? { restaurantId: null, restaurantName: null } : {}),
+          items: remaining,
+          ...(remaining.length === 0 ? { restaurantId: null, restaurantName: null } : {}),
         };
       }
       return {
@@ -114,7 +145,6 @@ interface CartContextValue {
   decrement: (menuItemId: string) => void;
   clear: () => void;
   getItemQty: (menuItemId: string) => number;
-  /** If a conflict prompt is pending */
   conflictPending: Omit<CartItem, 'qty'> | null;
   confirmReplace: () => void;
   cancelReplace: () => void;
@@ -128,14 +158,32 @@ const INITIAL_STATE: CartState = { items: [], restaurantId: null, restaurantName
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, INITIAL_STATE);
   const [conflictPending, setConflictPending] = useState<Omit<CartItem, 'qty'> | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    const saved = loadFromStorage();
+    if (saved && saved.items.length > 0) {
+      dispatch({ type: 'HYDRATE', payload: saved });
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist to localStorage on every state change (after hydration)
+  useEffect(() => {
+    if (!hydrated) return;
+    if (state.items.length > 0) {
+      saveToStorage(state);
+    } else {
+      clearStorage();
+    }
+  }, [state, hydrated]);
 
   const addItem = useCallback(
     (item: Omit<CartItem, 'qty'>) => {
-      // Same restaurant or empty cart → add directly
       if (!state.restaurantId || state.restaurantId === item.restaurantId) {
         dispatch({ type: 'ADD', payload: item });
       } else {
-        // Different restaurant → ask confirmation
         setConflictPending(item);
       }
     },

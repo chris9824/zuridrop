@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShoppingBag, Loader2, AlertTriangle, Banknote, CreditCard, Smartphone } from 'lucide-react';
@@ -15,6 +15,7 @@ import { AddressSelector } from '@/components/checkout/address-selector';
 import { OrderSummary } from '@/components/checkout/order-summary';
 import { LoginForm } from '@/components/checkout/login-form';
 import { cn } from '@/lib/utils';
+import { getRestaurantAvailability, type Availability } from '@/lib/availability';
 
 type PaymentMethod = 'CASH' | 'CARD' | 'MOBILE_MONEY';
 
@@ -26,11 +27,21 @@ const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; icon: typeof Banknote
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectAfterLogin = searchParams.get('from');
   const { items, restaurantId, clear } = useCart();
 
   // Auth state
   const [authenticated, setAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+
+  // Availability
+  const [availability, setAvailability] = useState<Availability>({
+    status: 'OPEN',
+    label: 'Ouvert',
+    canOrder: true,
+  });
+  const [availabilityChecked, setAvailabilityChecked] = useState(false);
 
   // Addresses
   const [addresses, setAddresses] = useState<ApiAddress[]>([]);
@@ -51,6 +62,34 @@ export default function CheckoutPage() {
     setAuthenticated(isLoggedIn());
     setAuthChecked(true);
   }, []);
+
+  // Check restaurant availability when cart has items
+  useEffect(() => {
+    if (!restaurantId || items.length === 0) {
+      setAvailabilityChecked(true);
+      return;
+    }
+    let cancelled = false;
+
+    fetch(`/api/restaurants/${restaurantId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        if (data) {
+          setAvailability(getRestaurantAvailability({ isOpen: data.isOpen ?? true }));
+        }
+      })
+      .catch(() => {
+        // Network error — assume open
+      })
+      .finally(() => {
+        if (!cancelled) setAvailabilityChecked(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurantId, items.length]);
 
   // Load addresses when authenticated
   const loadAddresses = useCallback(async () => {
@@ -81,7 +120,7 @@ export default function CheckoutPage() {
 
   // Submit order
   const handleSubmit = async () => {
-    if (!restaurantId || items.length === 0) return;
+    if (!restaurantId || items.length === 0 || !availability.canOrder) return;
 
     setSubmitting(true);
     setSubmitError(null);
@@ -99,6 +138,7 @@ export default function CheckoutPage() {
     } catch (err) {
       if (err instanceof RestaurantClosedError) {
         setSubmitError('Le restaurant est fermé pour le moment. Réessayez plus tard.');
+        setAvailability(getRestaurantAvailability({ isOpen: false }));
       } else {
         setSubmitError(err instanceof Error ? err.message : 'Erreur lors de la commande.');
       }
@@ -107,30 +147,19 @@ export default function CheckoutPage() {
     }
   };
 
-  // Empty cart
-  if (authChecked && items.length === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
-            <Link href="/" className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:bg-accent rounded-lg px-2 py-1.5">
-              <ArrowLeft className="h-4 w-4" /> Retour
-            </Link>
-          </div>
-        </header>
-        <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-20 text-center">
-          <ShoppingBag className="h-16 w-16 text-muted-foreground/30" />
-          <h1 className="text-xl font-semibold text-foreground">Votre panier est vide</h1>
-          <p className="text-sm text-muted-foreground">
-            Ajoutez des articles depuis un restaurant pour passer commande.
-          </p>
-          <Link href="/">
-            <Button>Voir les restaurants</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const showLogin = authChecked && !authenticated;
+  const showEmptyCart = authChecked && authenticated && items.length === 0;
+  const showCheckout = authChecked && authenticated && items.length > 0;
+
+  const canSubmit = availability.canOrder && !submitting && items.length > 0;
+
+  const submitLabel = !availability.canOrder
+    ? availability.status === 'CLOSED'
+      ? 'Restaurant fermé'
+      : 'Hors zone de livraison'
+    : submitting
+      ? ''
+      : 'Confirmer la commande';
 
   return (
     <div className="min-h-screen bg-background pb-10">
@@ -145,15 +174,32 @@ export default function CheckoutPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6">
-        {/* Login required */}
-        {authChecked && !authenticated && (
+        {/* 1 — Login required */}
+        {showLogin && (
           <div className="mx-auto max-w-md">
-            <LoginForm onSuccess={() => setAuthenticated(true)} />
+            <LoginForm
+              onSuccess={() => setAuthenticated(true)}
+              redirectTo={redirectAfterLogin || undefined}
+            />
           </div>
         )}
 
-        {/* Checkout form */}
-        {authenticated && (
+        {/* 2 — Empty cart */}
+        {showEmptyCart && (
+          <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-20 text-center">
+            <ShoppingBag className="h-16 w-16 text-muted-foreground/30" />
+            <h1 className="text-xl font-semibold text-foreground">Votre panier est vide</h1>
+            <p className="text-sm text-muted-foreground">
+              Ajoutez des articles depuis un restaurant pour passer commande.
+            </p>
+            <Link href="/">
+              <Button>Voir les restaurants</Button>
+            </Link>
+          </div>
+        )}
+
+        {/* 3 — Checkout form */}
+        {showCheckout && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -161,6 +207,49 @@ export default function CheckoutPage() {
           >
             {/* Left column — 3/5 */}
             <div className="space-y-6 lg:col-span-3">
+              {/* Availability alert */}
+              {availabilityChecked && !availability.canOrder && (
+                <div
+                  className={`flex items-start gap-3 rounded-2xl border p-4 ${
+                    availability.status === 'CLOSED'
+                      ? 'border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-950/30'
+                      : 'border-orange-200 bg-orange-50 dark:border-orange-900/30 dark:bg-orange-950/30'
+                  }`}
+                >
+                  <AlertTriangle
+                    className={`mt-0.5 h-5 w-5 shrink-0 ${
+                      availability.status === 'CLOSED'
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-orange-600 dark:text-orange-400'
+                    }`}
+                  />
+                  <div>
+                    <p
+                      className={`text-sm font-semibold ${
+                        availability.status === 'CLOSED'
+                          ? 'text-red-800 dark:text-red-300'
+                          : 'text-orange-800 dark:text-orange-300'
+                      }`}
+                    >
+                      {availability.status === 'CLOSED'
+                        ? 'Le restaurant est fermé pour le moment.'
+                        : "Ce restaurant n'est pas disponible pour votre zone."}
+                    </p>
+                    <p
+                      className={`mt-1 text-xs ${
+                        availability.status === 'CLOSED'
+                          ? 'text-red-700 dark:text-red-400'
+                          : 'text-orange-700 dark:text-orange-400'
+                      }`}
+                    >
+                      {availability.status === 'CLOSED'
+                        ? 'Vous ne pouvez pas passer commande tant que le restaurant est fermé. Réessayez plus tard.'
+                        : "Cette adresse n'est pas éligible à la livraison pour ce restaurant."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Address */}
               <section className="rounded-2xl border border-border bg-card p-5">
                 <h2 className="mb-4 text-base font-semibold text-foreground">Adresse de livraison</h2>
@@ -232,13 +321,13 @@ export default function CheckoutPage() {
                 <Button
                   className="w-full"
                   size="lg"
-                  disabled={submitting || items.length === 0}
+                  disabled={!canSubmit}
                   onClick={handleSubmit}
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    'Confirmer la commande'
+                    submitLabel
                   )}
                 </Button>
               </div>

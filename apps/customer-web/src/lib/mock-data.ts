@@ -30,7 +30,7 @@ export const categories: Category[] = [
   { id: 'healthy', label: 'Healthy', emoji: '🥑' },
 ];
 
-export const restaurants: Restaurant[] = [
+const _mockRestaurants: Omit<Restaurant, '_searchText' | 'isOpen'>[] = [
   {
     id: '1',
     name: 'Chez Tantie Awa',
@@ -224,3 +224,9 @@ export const restaurants: Restaurant[] = [
     isRecommended: false,
   },
 ];
+
+export const restaurants: Restaurant[] = _mockRestaurants.map((r) => ({
+  ...r,
+  isOpen: true,
+  _searchText: [r.name, ...r.tags].join(' ').toLowerCase(),
+}));

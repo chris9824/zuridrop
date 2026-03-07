@@ -6,10 +6,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, MapPin, ShoppingBag, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
+import { AccountMenu } from '@/components/account/account-menu';
 import { useCart } from '@/components/cart/cart-provider';
 import { CartDrawer } from '@/components/cart/cart-drawer';
 
-export function Header() {
+interface HeaderProps {
+  searchTerm?: string;
+  onSearchChange?: (value: string) => void;
+}
+
+export function Header({ searchTerm, onSearchChange }: HeaderProps = {}) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { totalQty } = useCart();
@@ -51,6 +57,8 @@ export function Header() {
               type="text"
               placeholder="Rechercher un restaurant ou un plat…"
               aria-label="Rechercher un restaurant ou un plat"
+              value={searchTerm ?? ''}
+              onChange={(e) => onSearchChange?.(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               className={`
@@ -66,6 +74,7 @@ export function Header() {
 
           {/* Actions */}
           <ThemeToggle />
+          <AccountMenu />
 
           {/* Cart button → opens drawer */}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.93 }}>

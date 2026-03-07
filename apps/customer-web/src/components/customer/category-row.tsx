@@ -1,19 +1,21 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { categories } from '@/lib/mock-data';
 
-export function CategoryRow() {
-  const [selected, setSelected] = useState('all');
+interface CategoryRowProps {
+  selected: string;
+  onSelect: (id: string) => void;
+}
 
+export function CategoryRow({ selected, onSelect }: CategoryRowProps) {
   const chip = (cat: (typeof categories)[number]) => (
     <motion.button
       key={cat.id}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.93 }}
-      onClick={() => setSelected(cat.id)}
+      onClick={() => onSelect(cat.id)}
       aria-pressed={selected === cat.id}
       className={cn(
         'flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors duration-150',

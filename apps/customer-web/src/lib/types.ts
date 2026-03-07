@@ -15,4 +15,8 @@ export type Restaurant = {
   tags: string[];
   isFeatured: boolean;
   isRecommended: boolean;
+  /** Backend isOpen flag — null means unknown (treated as open) */
+  isOpen: boolean | null;
+  /** Lowercase concatenation of name + description + menuItem names/categories for filtering */
+  _searchText: string;
 };

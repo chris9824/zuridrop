@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, DriverAvailability } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -38,9 +38,10 @@ async function main() {
   });
   console.log(`  ✅ Merchant: ${merchant.email}`);
 
+  // ~0.5 km du restaurant "Chez Moussa" (5.3480, -4.0165)
   const driver = await prisma.user.upsert({
     where: { email: 'driver1@test.com' },
-    update: { isOnline: true },
+    update: { isOnline: true, availability: DriverAvailability.AVAILABLE, latitude: 5.3510, longitude: -4.0140 },
     create: {
       email: 'driver1@test.com',
       password: passwordHash,
@@ -49,11 +50,12 @@ async function main() {
       phone: '+225 03 03 03 03',
       role: Role.DRIVER,
       isOnline: true,
-      latitude: 5.3450,
-      longitude: -4.0200,
+      availability: DriverAvailability.AVAILABLE,
+      latitude: 5.3510,
+      longitude: -4.0140,
     },
   });
-  console.log(`  ✅ Driver: ${driver.email} (online)`);
+  console.log(`  ✅ Driver: ${driver.email} (AVAILABLE — ~0.5 km du resto)`);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin1@test.com' },
@@ -99,9 +101,10 @@ async function main() {
   });
   console.log(`  ✅ Merchant 2: ${merchant2.email}`);
 
+  // ~2 km du restaurant "Chez Moussa"
   const driver2 = await prisma.user.upsert({
     where: { email: 'driver2@test.com' },
-    update: { isOnline: true },
+    update: { isOnline: true, availability: DriverAvailability.AVAILABLE, latitude: 5.3320, longitude: -4.0100 },
     create: {
       email: 'driver2@test.com',
       password: passwordHash,
@@ -110,15 +113,17 @@ async function main() {
       phone: '+225 13 13 13 13',
       role: Role.DRIVER,
       isOnline: true,
-      latitude: 5.3380,
-      longitude: -4.0150,
+      availability: DriverAvailability.AVAILABLE,
+      latitude: 5.3320,
+      longitude: -4.0100,
     },
   });
-  console.log(`  ✅ Driver 2: ${driver2.email} (online)`);
+  console.log(`  ✅ Driver 2: ${driver2.email} (AVAILABLE — ~2 km du resto)`);
 
+  // ~5 km du restaurant "Chez Moussa"
   const driver3 = await prisma.user.upsert({
     where: { email: 'driver3@test.com' },
-    update: {},
+    update: { availability: DriverAvailability.AVAILABLE, isOnline: true, latitude: 5.3100, longitude: -4.0450 },
     create: {
       email: 'driver3@test.com',
       password: passwordHash,
@@ -126,12 +131,32 @@ async function main() {
       lastName: 'Yao',
       phone: '+225 14 14 14 14',
       role: Role.DRIVER,
-      isOnline: false,
-      latitude: 5.3500,
-      longitude: -4.0300,
+      isOnline: true,
+      availability: DriverAvailability.AVAILABLE,
+      latitude: 5.3100,
+      longitude: -4.0450,
     },
   });
-  console.log(`  ✅ Driver 3: ${driver3.email} (offline — pour tester indisponibilité)`);
+  console.log(`  ✅ Driver 3: ${driver3.email} (AVAILABLE — ~5 km du resto)`);
+
+  // ~1.2 km du restaurant "Chez Moussa"
+  const driver4 = await prisma.user.upsert({
+    where: { email: 'driver4@test.com' },
+    update: { availability: DriverAvailability.AVAILABLE, isOnline: true, latitude: 5.3400, longitude: -4.0210 },
+    create: {
+      email: 'driver4@test.com',
+      password: passwordHash,
+      firstName: 'Adjoua',
+      lastName: 'N\'Guessan',
+      phone: '+225 15 15 15 15',
+      role: Role.DRIVER,
+      isOnline: true,
+      availability: DriverAvailability.AVAILABLE,
+      latitude: 5.3400,
+      longitude: -4.0210,
+    },
+  });
+  console.log(`  ✅ Driver 4: ${driver4.email} (AVAILABLE — ~1.2 km du resto)`);
 
   // ─── Address for customer ─────────────────────────────
 
@@ -333,9 +358,10 @@ async function main() {
   console.log('   customer2@test.com  (CUSTOMER)');
   console.log('   merchant1@test.com  (MERCHANT)');
   console.log('   merchant2@test.com  (MERCHANT)');
-  console.log('   driver1@test.com    (DRIVER — online)');
-  console.log('   driver2@test.com    (DRIVER — online)');
-  console.log('   driver3@test.com    (DRIVER — offline)');
+  console.log('   driver1@test.com    (DRIVER — AVAILABLE)');
+  console.log('   driver2@test.com    (DRIVER — AVAILABLE)');
+  console.log('   driver3@test.com    (DRIVER — AVAILABLE)');
+  console.log('   driver4@test.com    (DRIVER — AVAILABLE)');
   console.log('   admin1@test.com     (ADMIN)');
 }
 

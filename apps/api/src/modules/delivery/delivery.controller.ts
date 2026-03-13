@@ -17,7 +17,12 @@ export class DeliveryController {
   // ─── Driver Status ──────────────────────────────────
 
   @Put('toggle-online')
-  @ApiOperation({ summary: 'Toggle statut en ligne du driver' })
+  @ApiOperation({
+    summary: '[Legacy] Toggle statut en ligne du driver',
+    description:
+      '⚠️ **Déprécié** – Préférez `PATCH /driver/availability`.\n\n' +
+      'Bascule entre AVAILABLE et OFFLINE. Synchronise le champ `availability`.',
+  })
   toggleOnline(@CurrentUser() user: any) {
     return this.deliveryService.toggleOnline(user.id);
   }

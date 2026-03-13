@@ -37,7 +37,15 @@ enum DeliveryStatus {
   PICKED_UP
   IN_TRANSIT
   DELIVERED
+  REJECTED
+  EXPIRED
   CANCELLED
+}
+
+enum DriverAvailability {
+  OFFLINE
+  AVAILABLE
+  BUSY
 }
 
 enum PaymentMethod {
@@ -58,6 +66,7 @@ model User {
   role         Role     @default(CUSTOMER)
   isActive     Boolean  @default(true) @map("is_active")
   isOnline     Boolean  @default(false) @map("is_online")
+  availability DriverAvailability @default(OFFLINE) @map("availability")
   latitude     Float?
   longitude    Float?
   createdAt    DateTime @default(now()) @map("created_at")
@@ -188,6 +197,7 @@ model Delivery {
   driverId       String         @map("driver_id")
   status         DeliveryStatus @default(ASSIGNED)
   assignedAt     DateTime       @default(now()) @map("assigned_at")
+  assignmentExpiresAt DateTime? @map("assignment_expires_at")
   acceptedAt     DateTime?      @map("accepted_at")
   pickedUpAt     DateTime?      @map("picked_up_at")
   startedAt      DateTime?      @map("started_at")

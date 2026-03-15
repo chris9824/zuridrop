@@ -172,38 +172,9 @@ export default function KitchenPage() {
 
 function playNotification() {
   try {
-    const ctx = new AudioContext();
-    const now = ctx.currentTime;
-
-    const bell = (time: number, freq: number, duration: number) => {
-      const osc = ctx.createOscillator();
-      const harm = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const harmGain = ctx.createGain();
-
-      osc.connect(gain);
-      harm.connect(harmGain);
-      gain.connect(ctx.destination);
-      harmGain.connect(ctx.destination);
-
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      harm.frequency.value = freq * 2.5;
-      harm.type = 'sine';
-
-      gain.gain.setValueAtTime(0.45, time);
-      gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
-      harmGain.gain.setValueAtTime(0.15, time);
-      harmGain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.6);
-
-      osc.start(time);
-      osc.stop(time + duration);
-      harm.start(time);
-      harm.stop(time + duration);
-    };
-
-    bell(now, 1400, 0.5);
-    bell(now + 0.45, 1050, 0.7);
+    const audio = new Audio('/notification.mp3');
+    audio.volume = 1;
+    audio.play().catch(() => {});
   } catch {
     /* audio not available */
   }

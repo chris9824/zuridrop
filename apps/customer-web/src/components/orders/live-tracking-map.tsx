@@ -31,10 +31,10 @@ const CUSTOMER_ICON = new L.Icon({
 });
 
 const DRIVER_ICON = new L.Icon({
-  iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="22" viewBox="0 0 36 22" fill="none"><path d="M2 16V5a2 2 0 0 1 2-2h12l4.5 6H28a3 3 0 0 1 3 3v4H2Z" fill="%234f46e5" stroke="%23312e81" stroke-width="1.2"/><path d="M14 3v10h7L16 5h-2Z" fill="%236366f1" opacity="0.5"/><rect x="1" y="16" width="34" height="2" rx="1" fill="%23312e81"/><circle cx="9" cy="18" r="3.5" fill="%23e5e7eb" stroke="%23312e81" stroke-width="1.2"/><circle cx="9" cy="18" r="1.5" fill="%23312e81"/><circle cx="26" cy="18" r="3.5" fill="%23e5e7eb" stroke="%23312e81" stroke-width="1.2"/><circle cx="26" cy="18" r="1.5" fill="%23312e81"/><rect x="29" y="10" width="4" height="3" rx="1" fill="%23fbbf24" stroke="%23312e81" stroke-width="0.8"/><rect x="1" y="10" width="3" height="3" rx="1" fill="%23ef4444" stroke="%23312e81" stroke-width="0.8"/></svg>`),
-  iconSize: [36, 22],
-  iconAnchor: [18, 11],
-  popupAnchor: [0, -14],
+  iconUrl: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42"><circle cx="21" cy="21" r="19" fill="%234f46e5" stroke="white" stroke-width="2.5"/><g transform="translate(9,12)" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12h22"/><path d="M3 12V7a1 1 0 0 1 1-1h7l3 4h4a2 2 0 0 1 2 2v0"/><circle cx="6.5" cy="12" r="2" fill="white"/><circle cx="17.5" cy="12" r="2" fill="white"/></g></svg>`),
+  iconSize: [42, 42],
+  iconAnchor: [21, 21],
+  popupAnchor: [0, -21],
 });
 
 function FitBounds({ points }: { points: Coords[] }) {

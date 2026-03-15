@@ -4,6 +4,8 @@ import { getRestaurantById, NotFoundError } from '@/lib/api/restaurants';
 import type { ApiRestaurantDetail } from '@/lib/api/schemas';
 import { getRestaurantAvailability, AVAILABILITY_BADGE_STYLES } from '@/lib/availability';
 import { RestaurantMenuSection } from '@/components/menu/restaurant-menu-section';
+import { StickyCartBar } from '@/components/cart/sticky-cart-bar';
+import { CartIconButton } from '@/components/cart/cart-icon-button';
 
 interface Props {
   params: { id: string };
@@ -71,8 +73,8 @@ export default async function RestaurantDetailPage({ params }: Props) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-        {/* Back button */}
-        <div className="absolute left-0 top-0 z-10 p-4">
+        {/* Navigation buttons */}
+        <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between p-4">
           <Link
             href="/"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-colors hover:bg-black/50"
@@ -80,6 +82,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
+          <CartIconButton />
         </div>
 
         {/* Restaurant info overlay */}
@@ -185,6 +188,9 @@ export default async function RestaurantDetailPage({ params }: Props) {
           disabledReason={availability.reason}
         />
       </div>
+
+      {/* Sticky cart CTA */}
+      <StickyCartBar restaurantId={restaurant.id} />
     </div>
   );
 }

@@ -34,6 +34,7 @@ import { getStatusConfig, isFinalStatus, getProgressPercent } from '@/lib/order-
 import type { StatusConfig } from '@/lib/order-status';
 import { OrderStatusBadge } from '@/components/orders/order-status-badge';
 import { OrderTimeline } from '@/components/orders/order-timeline';
+import { TrackingSection } from '@/components/orders/tracking-section';
 import { LoginForm } from '@/components/checkout/login-form';
 
 const POLL_INTERVAL_MS = 10_000;
@@ -222,6 +223,11 @@ export default function OrderDetailPage() {
               progressPercent={progressPercent}
               pollingActive={pollingActive}
             />
+
+            {/* ╔══ LIVE TRACKING — Carte livreur ═══════ */}
+            {(order.status === 'IN_TRANSIT' || order.status === 'PICKED_UP' || order.status === 'DELIVERED') && (
+              <TrackingSection orderId={orderId} orderStatus={order.status} />
+            )}
 
             {/* ╔══ 2-column layout desktop ════════════ */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">

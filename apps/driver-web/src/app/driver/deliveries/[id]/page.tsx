@@ -6,17 +6,53 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, MapPin, Phone, Package,
   RefreshCw, Hash, CreditCard, Store,
+  Navigation, MessageSquare,
 } from 'lucide-react';
 import { isLoggedIn } from '@/lib/api/auth';
-import { getDeliveryById, type Delivery } from '@/lib/api/driver';
+import { getDeliveryById, type Delivery, type DeliveryStatus } from '@/lib/api/driver';
 import { formatCurrency, timeAgo } from '@/lib/format';
 import { usePolling } from '@/hooks/use-polling';
 import { DeliveryTimeline } from '@/components/driver/delivery-timeline';
 import { DeliveryActions } from '@/components/driver/delivery-actions';
 import { DeliveryStatusBadge } from '@/components/driver/delivery-status-badge';
 import { MapActionButton } from '@/components/driver/map-action-button';
+import { cn } from '@/lib/cn';
 
 const TERMINAL = ['DELIVERED', 'CANCELLED', 'REJECTED', 'EXPIRED'];
+
+const BANNER: Record<string, { text: string; accent: string; bg: string }> = {
+  ASSIGNED: {
+    text: 'Nouvelle mission — acceptez ou refusez',
+    accent: 'text-amber-400',
+    bg: 'bg-amber-500/[0.06] border-amber-500/15',
+  },
+  ACCEPTED: {
+    text: 'Rendez-vous au restaurant pour récupérer la commande',
+    accent: 'text-blue-400',
+    bg: 'bg-blue-500/[0.06] border-blue-500/15',
+  },
+  PICKED_UP: {
+    text: 'Commande récupérée — démarrez la livraison',
+    accent: 'text-violet-400',
+    bg: 'bg-violet-500/[0.06] border-violet-500/15',
+  },
+  IN_TRANSIT: {
+    text: 'En route vers le client',
+    accent: 'text-primary',
+    bg: 'bg-primary/[0.06] border-primary/15',
+  },
+  DELIVERED: {
+    text: 'Mission terminée',
+    accent: 'text-emerald-400',
+    bg: 'bg-emerald-500/[0.06] border-emerald-500/15',
+  },
+};
+
+function currentStep(status: DeliveryStatus): number {
+  const order: DeliveryStatus[] = ['ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED'];
+  const idx = order.indexOf(status);
+  return idx >= 0 ? idx + 1 : 0;
+}
 
 export default function DeliveryDetailPage() {
   const router = useRouter();
@@ -88,12 +124,17 @@ export default function DeliveryDetailPage() {
   const customer = order.customer;
   const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
   const hasActions = !TERMINAL.includes(delivery.status);
+  const step = currentStep(delivery.status as DeliveryStatus);
+  const banner = BANNER[delivery.status];
 
   const restoAddress = [restaurant.street, restaurant.city].filter(Boolean).join(', ');
   const clientAddress = address ? [address.street, address.city].filter(Boolean).join(', ') : '';
 
+  const showNavToRestaurant = ['ASSIGNED', 'ACCEPTED'].includes(delivery.status);
+  const showNavToClient = ['PICKED_UP', 'IN_TRANSIT'].includes(delivery.status);
+
   return (
-    <div className={`min-h-screen bg-background ${hasActions ? 'pb-32' : 'pb-6'}`}>
+    <div className={`min-h-screen bg-background ${hasActions ? 'pb-36' : 'pb-6'}`}>
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-white/[0.04] bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
@@ -112,6 +153,11 @@ export default function DeliveryDetailPage() {
                   Live
                 </span>
               )}
+              {step > 0 && (
+                <span className="text-[11px] text-muted-foreground">
+                  Étape {step}/5
+                </span>
+              )}
             </div>
             <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <Hash className="h-3 w-3" />
@@ -122,16 +168,36 @@ export default function DeliveryDetailPage() {
       </header>
 
       <main className="mx-auto max-w-lg space-y-4 px-4 py-4">
+        {/* Contextual banner */}
+        {banner && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+              'flex items-center gap-3 rounded-2xl border px-4 py-3',
+              banner.bg,
+            )}
+          >
+            <Navigation className={cn('h-4 w-4 shrink-0', banner.accent)} />
+            <span className={cn('text-sm font-semibold', banner.accent)}>
+              {banner.text}
+            </span>
+          </motion.div>
+        )}
+
         {/* Route visual */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="rounded-3xl border border-white/[0.06] bg-card p-5"
         >
-          {/* Pickup */}
+          {/* Pickup section */}
           <div className="flex gap-3">
             <div className="flex flex-col items-center">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <div className={cn(
+                'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
+                showNavToRestaurant ? 'bg-primary/15 ring-2 ring-primary/30' : 'bg-primary/10',
+              )}>
                 <Store className="h-4.5 w-4.5 text-primary" />
               </div>
               <div className="mt-1 w-0.5 flex-1 bg-white/[0.06]" />
@@ -144,21 +210,25 @@ export default function DeliveryDetailPage() {
               {restoAddress && (
                 <div className="mt-0.5 text-xs text-muted-foreground">{restoAddress}</div>
               )}
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <MapActionButton
-                  label="Naviguer"
+                  label={showNavToRestaurant ? 'Naviguer vers le restaurant' : 'Naviguer'}
                   lat={restaurant.latitude}
                   lng={restaurant.longitude}
                   address={restoAddress}
+                  className={showNavToRestaurant ? 'bg-primary/10 text-primary hover:bg-primary/20 font-bold' : undefined}
                 />
               </div>
             </div>
           </div>
 
-          {/* Delivery */}
+          {/* Delivery section */}
           <div className="flex gap-3">
             <div className="flex flex-col items-center">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500/10">
+              <div className={cn(
+                'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
+                showNavToClient ? 'bg-orange-500/15 ring-2 ring-orange-500/30' : 'bg-orange-500/10',
+              )}>
                 <MapPin className="h-4.5 w-4.5 text-orange-400" />
               </div>
             </div>
@@ -178,10 +248,11 @@ export default function DeliveryDetailPage() {
               )}
               <div className="mt-2 flex flex-wrap gap-2">
                 <MapActionButton
-                  label="Naviguer"
+                  label={showNavToClient ? 'Naviguer vers le client' : 'Naviguer'}
                   lat={address?.latitude}
                   lng={address?.longitude}
                   address={clientAddress}
+                  className={showNavToClient ? 'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 font-bold' : undefined}
                 />
                 {customer.phone && (
                   <a
@@ -237,8 +308,12 @@ export default function DeliveryDetailPage() {
           </div>
 
           {order.notes && (
-            <div className="mt-3 rounded-xl bg-amber-500/5 p-3 text-xs text-muted-foreground">
-              <span className="font-semibold text-amber-400">Note client :</span> {order.notes}
+            <div className="mt-3 flex items-start gap-2 rounded-xl bg-amber-500/5 p-3">
+              <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+              <div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-400">Note du client</span>
+                <p className="mt-0.5 text-xs text-muted-foreground">{order.notes}</p>
+              </div>
             </div>
           )}
         </motion.div>

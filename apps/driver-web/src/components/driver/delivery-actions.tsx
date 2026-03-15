@@ -13,6 +13,7 @@ import {
   completeDelivery,
 } from '@/lib/api/driver';
 import { cn } from '@/lib/cn';
+import { useToast } from './toast';
 
 interface ActionDef {
   label: string;
@@ -20,6 +21,7 @@ interface ActionDef {
   bg: string;
   action: (id: string) => Promise<unknown>;
   confirm?: string;
+  successMsg: string;
 }
 
 const ACTIONS: Partial<Record<DeliveryStatus, ActionDef>> = {
@@ -28,18 +30,21 @@ const ACTIONS: Partial<Record<DeliveryStatus, ActionDef>> = {
     icon: Check,
     bg: 'bg-primary hover:bg-primary/90',
     action: acceptDelivery,
+    successMsg: 'Mission acceptée',
   },
   ACCEPTED: {
     label: 'Commande récupérée',
     icon: Package,
     bg: 'bg-blue-600 hover:bg-blue-700',
     action: pickupDelivery,
+    successMsg: 'Commande récupérée',
   },
   PICKED_UP: {
     label: 'Démarrer la livraison',
     icon: Truck,
     bg: 'bg-violet-600 hover:bg-violet-700',
     action: startDelivery,
+    successMsg: 'Livraison démarrée',
   },
   IN_TRANSIT: {
     label: 'Confirmer la livraison',
@@ -47,6 +52,7 @@ const ACTIONS: Partial<Record<DeliveryStatus, ActionDef>> = {
     bg: 'bg-emerald-600 hover:bg-emerald-700',
     action: completeDelivery,
     confirm: 'Confirmer que la commande a été remise au client ?',
+    successMsg: 'Livraison terminée !',
   },
 };
 
@@ -56,6 +62,7 @@ interface Props {
 }
 
 export function DeliveryActions({ delivery, onUpdated }: Props) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [error, setError] = useState('');
@@ -74,9 +81,12 @@ export function DeliveryActions({ delivery, onUpdated }: Props) {
     setConfirming(false);
     try {
       const result = await config.action(delivery.id);
+      toast('success', config.successMsg);
       onUpdated(result as Delivery);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur');
+      const msg = err instanceof Error ? err.message : 'Erreur';
+      setError(msg);
+      toast('error', msg);
     } finally {
       setLoading(false);
     }
@@ -87,9 +97,12 @@ export function DeliveryActions({ delivery, onUpdated }: Props) {
     setRejecting(true);
     try {
       await rejectDelivery(delivery.id, 'Refusée par le driver');
+      toast('success', 'Mission refusée');
       onUpdated(null);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur');
+      const msg = err instanceof Error ? err.message : 'Erreur';
+      setError(msg);
+      toast('error', msg);
     } finally {
       setRejecting(false);
     }

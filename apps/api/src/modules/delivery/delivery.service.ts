@@ -10,6 +10,7 @@ import { PrismaService } from '../../common/services/prisma.service';
 import { UpdateLocationDto, UpdateDeliveryStatusDto, UpdateAvailabilityDto, DriverAvailabilityInput } from './dto';
 import { DeliveryStatus, DriverAvailability, OrderStatus } from '@prisma/client';
 import { DispatchService } from './dispatch.service';
+import { TrackingService } from './tracking.service';
 
 const ACTIVE_STATUSES: DeliveryStatus[] = [
   DeliveryStatus.ASSIGNED,
@@ -37,6 +38,7 @@ export class DeliveryService {
   constructor(
     private prisma: PrismaService,
     private dispatchService: DispatchService,
+    private trackingService: TrackingService,
   ) {}
 
   // ─── Driver Availability ────────────────────────────
@@ -318,12 +320,13 @@ export class DeliveryService {
 
   /**
    * PICKED_UP → IN_TRANSIT (also updates Order.status)
+   * Starts the live tracking simulation.
    */
   async startDelivery(driverId: string, deliveryId: string) {
     const delivery = await this.getOwnedDelivery(driverId, deliveryId);
     this.assertStatus(delivery.status, DeliveryStatus.PICKED_UP, DeliveryStatus.IN_TRANSIT);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       await tx.order.update({
         where: { id: delivery.orderId },
         data: { status: OrderStatus.IN_TRANSIT },
@@ -334,15 +337,23 @@ export class DeliveryService {
         include: DELIVERY_INCLUDE,
       });
     });
+
+    this.trackingService.startSimulation(delivery.orderId, delivery.id).catch((err) => {
+      this.logger.error(`Failed to start tracking simulation for order ${delivery.orderId}: ${err.message}`);
+    });
+
+    return result;
   }
 
   /**
    * IN_TRANSIT → DELIVERED (also updates Order.status)
-   * Marks driver back to AVAILABLE.
+   * Marks driver back to AVAILABLE. Stops tracking simulation.
    */
   async completeDelivery(driverId: string, deliveryId: string) {
     const delivery = await this.getOwnedDelivery(driverId, deliveryId);
     this.assertStatus(delivery.status, DeliveryStatus.IN_TRANSIT, DeliveryStatus.DELIVERED);
+
+    this.trackingService.stopSimulation(delivery.orderId);
 
     return this.prisma.$transaction(async (tx) => {
       await tx.order.update({
@@ -431,7 +442,7 @@ export class DeliveryService {
     const delivery = await this.getDriverDeliveryByOrder(driverId, orderId);
     this.assertStatus(delivery.status, DeliveryStatus.PICKED_UP, DeliveryStatus.IN_TRANSIT);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       await tx.order.update({ where: { id: orderId }, data: { status: OrderStatus.IN_TRANSIT } });
       return tx.delivery.update({
         where: { id: delivery.id },
@@ -439,11 +450,19 @@ export class DeliveryService {
         include: DELIVERY_INCLUDE,
       });
     });
+
+    this.trackingService.startSimulation(orderId, delivery.id).catch((err) => {
+      this.logger.error(`Failed to start tracking simulation for order ${orderId}: ${err.message}`);
+    });
+
+    return result;
   }
 
   async completeDeliveryLegacy(driverId: string, orderId: string) {
     const delivery = await this.getDriverDeliveryByOrder(driverId, orderId);
     this.assertStatus(delivery.status, DeliveryStatus.IN_TRANSIT, DeliveryStatus.DELIVERED);
+
+    this.trackingService.stopSimulation(orderId);
 
     return this.prisma.$transaction(async (tx) => {
       await tx.order.update({ where: { id: orderId }, data: { status: OrderStatus.DELIVERED } });

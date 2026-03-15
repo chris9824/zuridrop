@@ -8,18 +8,22 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard, RolesGuard } from '../../common/guards';
 import { CurrentUser, Roles } from '../../common/decorators';
+import { TrackingService } from '../delivery/tracking.service';
 
 @ApiTags('Orders')
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly trackingService: TrackingService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -55,6 +59,22 @@ export class OrdersController {
   @ApiOperation({ summary: 'Commandes de mes restaurants (merchant)' })
   findRestaurantOrders(@CurrentUser() user: any, @Query() pagination: PaginationDto) {
     return this.ordersService.findRestaurantOrders(user.id, pagination);
+  }
+
+  @Get(':id/tracking')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Tracking live du livreur',
+    description:
+      'Retourne la position simulée du livreur en temps réel.\n\n' +
+      'Disponible quand la commande est au statut `IN_TRANSIT`.\n\n' +
+      'Contient : coordonnées restaurant, client, driver, distance restante, progression.',
+  })
+  @ApiParam({ name: 'id', description: 'ID de la commande' })
+  async getTracking(@CurrentUser() user: any, @Param('id') id: string) {
+    await this.ordersService.findOne(id, user.id, user.role);
+    return this.trackingService.getTracking(id);
   }
 
   @Get(':id')

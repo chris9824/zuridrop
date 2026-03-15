@@ -86,6 +86,28 @@ export async function getOrderById(id: string): Promise<ApiOrderDetail> {
   return parsed.success ? parsed.data : (json as ApiOrderDetail);
 }
 
+/* ── Live tracking ──────────────────────────────── */
+export interface TrackingData {
+  orderId: string;
+  status: 'WAITING' | 'EN_ROUTE' | 'APPROACHING' | 'ARRIVED';
+  restaurant: { lat: number; lng: number } | null;
+  customer: { lat: number; lng: number } | null;
+  driver: { lat: number; lng: number } | null;
+  distanceRemainingKm: number | null;
+  percentProgress: number;
+  updatedAt: string;
+}
+
+export async function getOrderTracking(orderId: string): Promise<TrackingData | null> {
+  try {
+    const res = await authFetch(`${API_BASE}/api/v1/orders/${orderId}/tracking`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
 /* ── Custom errors ───────────────────────────────── */
 export class RestaurantClosedError extends Error {
   constructor() {

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Put,
+  Patch,
   Post,
   Delete,
   Body,
@@ -30,7 +31,7 @@ export class UsersController {
     return this.usersService.getMe(user.id);
   }
 
-  @Put('me')
+  @Patch('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mettre à jour mon profil' })

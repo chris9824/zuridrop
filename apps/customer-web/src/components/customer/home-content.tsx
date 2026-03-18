@@ -46,7 +46,7 @@ export function HomeContent({ featured, recommended, all, error }: HomeContentPr
 
       {/* Sticky filter bar */}
       <div className="sticky top-[calc(var(--header-h,57px))] z-40 border-b border-border bg-background/80 backdrop-blur-lg">
-        <div className="mx-auto max-w-7xl space-y-1 py-2">
+        <div className="mx-auto max-w-7xl space-y-1 px-4 py-2 md:px-6">
           <CategoryRow selected={selectedCategory} onSelect={setSelectedCategory} />
           <FilterRow />
         </div>

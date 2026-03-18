@@ -122,6 +122,7 @@ export const OrderDetailSchema = z.object({
   deliveryFee: z.number().optional().nullable(),
   paymentMethod: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  estimatedDeliveryMinutes: z.number().optional().nullable(),
   restaurantId: z.string().optional(),
   customerId: z.string().optional(),
   createdAt: z.string().optional().nullable(),
@@ -142,6 +143,12 @@ export const OrderDetailSchema = z.object({
     id: z.string(),
     status: z.string(),
     driverId: z.string().optional().nullable(),
+    driver: z.object({
+      id: z.string(),
+      firstName: z.string(),
+      lastName: z.string(),
+      phone: z.string().optional().nullable(),
+    }).optional().nullable(),
   }).optional().nullable(),
 }).passthrough();
 

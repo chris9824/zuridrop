@@ -83,6 +83,14 @@ export function AccountMenu() {
             {authenticated ? (
               <>
                 <button
+                  onClick={() => navigateTo('/account')}
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent"
+                >
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  Mon compte
+                </button>
+                <div className="border-t border-border" />
+                <button
                   onClick={() => navigateTo('/orders')}
                   className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent"
                 >
@@ -91,7 +99,7 @@ export function AccountMenu() {
                 </button>
                 <div className="border-t border-border" />
                 <button
-                  onClick={() => navigateTo('/account/addresses')}
+                  onClick={() => navigateTo('/account')}
                   className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent"
                 >
                   <MapPin className="h-4 w-4 text-muted-foreground" />

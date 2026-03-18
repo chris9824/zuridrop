@@ -6,47 +6,63 @@ import { motion } from 'framer-motion';
 import {
   ShoppingBag, Clock, ChefHat, Bell, DollarSign,
   TrendingUp, ArrowRight, Store, CheckCircle, Wallet,
-  Activity, XCircle, Percent,
+  Activity, XCircle, Percent, Calendar, Trophy,
 } from 'lucide-react';
 import {
-  getIncomingOrders, getActiveOrders, getOrderHistory, getMyRestaurants,
-  type Order, type Restaurant,
+  getIncomingOrders, getDashboardStats, getMyRestaurants,
+  type Order, type Restaurant, type DashboardStats,
 } from '@/lib/api/merchant';
-import { computeMetrics, type DashboardMetrics } from '@/lib/merchant-stats';
 import { StatsCard } from '@/components/merchant/stats-card';
 import { OrderCard } from '@/components/merchant/order-card';
 import { EmptyState } from '@/components/merchant/empty-state';
 import { usePolling } from '@/hooks/use-polling';
 import { formatCurrency } from '@/lib/format';
 
-const EMPTY_METRICS: DashboardMetrics = {
-  todayTotal: 0, todayDelivered: 0, todayCancelled: 0,
-  todayRevenue: 0, avgBasket: 0, activeCount: 0,
-  pendingCount: 0, preparingCount: 0, readyCount: 0,
-  acceptedCount: 0, conversionRate: 0,
+const EMPTY_LAST_7_DAYS = {
+  ordersCount: 0,
+  revenue: 0,
+  delivered: 0,
+  cancelled: 0,
+};
+
+const EMPTY_METRICS: DashboardStats = {
+  todayTotal: 0,
+  todayDelivered: 0,
+  todayCancelled: 0,
+  todayRevenue: 0,
+  avgBasket: 0,
+  activeCount: 0,
+  pendingCount: 0,
+  preparingCount: 0,
+  readyCount: 0,
+  acceptedCount: 0,
+  conversionRate: 0,
+  last7Days: EMPTY_LAST_7_DAYS,
+  totalRevenue: 0,
+  topItems: [],
+  dailyData: [],
 };
 
 export default function DashboardPage() {
   const router = useRouter();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [pending, setPending] = useState<Order[]>([]);
-  const [metrics, setMetrics] = useState<DashboardMetrics>(EMPTY_METRICS);
+  const [metrics, setMetrics] = useState<DashboardStats>(EMPTY_METRICS);
 
   const fetchAll = useCallback(async () => {
     try {
-      const [inc, act, hist, rests] = await Promise.all([
+      const [inc, stats, rests] = await Promise.all([
         getIncomingOrders(),
-        getActiveOrders(),
-        getOrderHistory(1, 200),
+        getDashboardStats(),
         getMyRestaurants(),
       ]);
 
       setPending(inc.data);
       if (rests.length > 0) setRestaurant(rests[0]);
-
-      setMetrics(computeMetrics(inc.data, act.data, hist.data));
-    } catch {
-      /* graceful */
+      setMetrics(stats);
+    } catch (err) {
+      console.error('[Dashboard] Failed to fetch stats:', err);
+      /* keep previous metrics on error */
     }
   }, []);
 
@@ -68,11 +84,13 @@ export default function DashboardPage() {
               <h1 className="text-xl font-bold text-foreground lg:text-2xl">
                 {restaurant ? `Bonjour, ${restaurant.name}` : 'Tableau de bord'}
               </h1>
-              <p className="text-sm text-muted-foreground">
-                {restaurant?.isOpen
-                  ? <span className="text-primary font-medium">Restaurant ouvert</span>
-                  : <span className="text-red-400 font-medium">Restaurant fermé</span>}
-              </p>
+              {restaurant && (
+                <p className="text-sm text-muted-foreground">
+                  {restaurant.isOpen
+                    ? <span className="text-primary font-medium">Restaurant ouvert</span>
+                    : <span className="text-red-400 font-medium">Restaurant fermé</span>}
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
@@ -168,6 +186,139 @@ export default function DashboardPage() {
               index={3}
             />
           </div>
+        </div>
+
+        {/* ── Section 3 : Vue sur 7 jours + Revenu total ─── */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Vue sur 7 jours</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatsCard
+                icon={<Calendar className="h-5 w-5" />}
+                label="Commandes"
+                hint="7 derniers jours"
+                value={metrics.last7Days?.ordersCount ?? 0}
+                accent="text-primary"
+                index={0}
+              />
+              <StatsCard
+                icon={<CheckCircle className="h-5 w-5" />}
+                label="Livrées"
+                hint="7 derniers jours"
+                value={metrics.last7Days?.delivered ?? 0}
+                accent="text-emerald-400"
+                index={1}
+              />
+              <StatsCard
+                icon={<DollarSign className="h-5 w-5" />}
+                label="Revenu"
+                hint="7 derniers jours"
+                value={formatCurrency(metrics.last7Days?.revenue ?? 0)}
+                accent="text-emerald-400"
+                index={2}
+              />
+              <StatsCard
+                icon={<XCircle className="h-5 w-5" />}
+                label="Annulées"
+                hint="7 derniers jours"
+                value={metrics.last7Days?.cancelled ?? 0}
+                accent="text-red-400"
+                index={3}
+              />
+            </div>
+          </div>
+          <div>
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Revenu total</h2>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
+                  <Wallet className="h-6 w-6 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-emerald-400 tabular-nums">
+                    {formatCurrency(metrics.totalRevenue ?? 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Toutes commandes livrées</div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* ── Section 4 : Graphique 7 jours ─────────────── */}
+        {(metrics.dailyData?.length ?? 0) > 0 && (
+          <div>
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Évolution sur 7 jours
+            </h2>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-white/[0.06] bg-card p-4"
+            >
+              <div className="flex items-end justify-between gap-2">
+                {(metrics.dailyData ?? []).map((d) => {
+                  const daily = metrics.dailyData ?? [];
+                  const maxOrders = Math.max(...daily.map((x) => x.orders), 1);
+                  const heightPct = maxOrders > 0 ? (d.orders / maxOrders) * 100 : 0;
+                  return (
+                    <div key={d.date} className="flex flex-1 flex-col items-center gap-1.5">
+                      <div className="flex h-20 w-full items-end justify-center">
+                        <div
+                          className="w-full max-w-10 rounded-t-md bg-primary/70 transition-all"
+                          style={{ height: `${Math.max(heightPct, 6)}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">{d.date}</span>
+                      <span className="text-[10px] font-semibold text-foreground tabular-nums">{d.orders}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-center text-[10px] text-muted-foreground">Nombre de commandes par jour</p>
+            </motion.div>
+          </div>
+        )}
+
+        {/* ── Section 5 : Top plats vendus ─────────────── */}
+        <div>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Top plats vendus
+          </h2>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-white/[0.06] bg-card p-4"
+          >
+            {(metrics.topItems?.length ?? 0) > 0 ? (
+              <div className="space-y-3">
+                {(metrics.topItems ?? []).map((item, i) => (
+                  <div
+                    key={`${item.name}-${i}`}
+                    className="flex items-center justify-between rounded-xl bg-white/[0.02] px-4 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                        {i + 1}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">{item.name}</span>
+                    </div>
+                    <span className="text-sm font-bold tabular-nums text-primary">{item.quantity} vendus</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Trophy className="h-10 w-10 text-muted-foreground/40" />
+                <p className="mt-2 text-sm text-muted-foreground">Aucune vente enregistrée</p>
+                <p className="text-[11px] text-muted-foreground/60">Les plats les plus vendus apparaîtront ici</p>
+              </div>
+            )}
+          </motion.div>
         </div>
 
         {/* Kitchen Mode CTA */}

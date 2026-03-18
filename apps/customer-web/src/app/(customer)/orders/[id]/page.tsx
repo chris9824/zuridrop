@@ -25,13 +25,15 @@ import {
   Truck,
   PartyPopper,
   XCircle,
+  UserCheck,
+  Phone,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isLoggedIn } from '@/lib/api/auth';
 import { getOrderById, AuthRequiredError, OrderNotFoundError } from '@/lib/api/orders';
 import type { ApiOrderDetail } from '@/lib/api/schemas';
-import { getStatusConfig, isFinalStatus, getProgressPercent } from '@/lib/order-status';
-import type { StatusConfig } from '@/lib/order-status';
+import { getStatusConfig, isFinalStatus, getProgressPercent, getDerivedStatus } from '@/lib/order-status';
+import type { StatusConfig, AssignedDriver } from '@/lib/order-status';
 import { OrderStatusBadge } from '@/components/orders/order-status-badge';
 import { OrderTimeline } from '@/components/orders/order-timeline';
 import { TrackingSection } from '@/components/orders/tracking-section';
@@ -374,9 +376,23 @@ function HeroSection({
   progressPercent: number;
   pollingActive: boolean;
 }) {
-  const HeroIcon = HERO_ICONS[statusConfig.icon] ?? Clock;
   const isCancelled = order.status === 'CANCELLED';
   const isDelivered = order.status === 'DELIVERED';
+
+  const assignedDriver: AssignedDriver | null =
+    (order as Record<string, unknown>).delivery &&
+    ((order as Record<string, unknown>).delivery as Record<string, unknown>)?.driver
+      ? ((order as Record<string, unknown>).delivery as { driver: AssignedDriver }).driver
+      : null;
+
+  const derived = getDerivedStatus(order.status, assignedDriver);
+
+  const heroTitle = derived.label;
+  const heroSubtitle = derived.subtitle;
+
+  const HeroIcon = derived.driverAssigned && (order.status === 'READY_FOR_PICKUP' || order.status === 'PICKED_UP')
+    ? UserCheck
+    : HERO_ICONS[statusConfig.icon] ?? Clock;
 
   return (
     <div
@@ -401,7 +417,9 @@ function HeroSection({
               ? 'bg-red-500 shadow-red-500/25'
               : isDelivered
                 ? 'bg-green-500 shadow-green-500/25'
-                : 'bg-primary shadow-primary/25',
+                : derived.driverAssigned
+                  ? 'bg-indigo-500 shadow-indigo-500/25'
+                  : 'bg-primary shadow-primary/25',
           )}
         >
           <HeroIcon className="h-7 w-7 text-white" />
@@ -411,12 +429,39 @@ function HeroSection({
           {/* Title */}
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
-              {statusConfig.heroTitle}
+              {heroTitle}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-              {statusConfig.heroSubtitle}
+              {heroSubtitle}
             </p>
           </div>
+
+          {/* Driver info card */}
+          {assignedDriver && !isDelivered && !isCancelled && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-3"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-500/15">
+                <UserCheck className="h-4 w-4 text-indigo-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  {assignedDriver.firstName} {assignedDriver.lastName}
+                </p>
+                <p className="text-xs text-muted-foreground">Votre livreur</p>
+              </div>
+              {assignedDriver.phone && (
+                <a
+                  href={`tel:${assignedDriver.phone}`}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+                >
+                  <Phone className="h-4 w-4" />
+                </a>
+              )}
+            </motion.div>
+          )}
 
           {/* Meta row */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
@@ -434,6 +479,12 @@ function HeroSection({
               <span className="flex items-center gap-1.5">
                 <CalendarDays className="h-3 w-3" />
                 {formatDate(order.createdAt)}
+              </span>
+            )}
+            {order.estimatedDeliveryMinutes && !isDelivered && !isCancelled && (
+              <span className="flex items-center gap-1.5 font-medium text-primary">
+                <Clock className="h-3 w-3" />
+                Livraison estimée : {order.estimatedDeliveryMinutes} min
               </span>
             )}
             <OrderStatusBadge status={order.status} className="text-xs" />

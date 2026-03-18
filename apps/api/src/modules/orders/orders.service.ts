@@ -11,6 +11,7 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 import { OrderStatus, PaymentMethod, Role } from '@prisma/client';
 import { validateTransition } from '../../common/utils/order-transitions';
 import { isRestaurantOpenNow } from '../../common/utils/restaurant-hours';
+import { haversineDistanceKm } from '../../common/utils/geo-distance';
 import { DispatchService } from '../delivery/dispatch.service';
 
 @Injectable()
@@ -60,6 +61,11 @@ export class OrdersService {
     const deliveryFee = 500; // Fixed delivery fee (simple)
     const total = subtotal + deliveryFee;
 
+    const estimatedDeliveryMinutes = await this.calculateEta(
+      restaurant,
+      dto.deliveryAddressId,
+    );
+
     const order = await this.prisma.order.create({
       data: {
         customerId,
@@ -70,6 +76,7 @@ export class OrdersService {
         subtotal,
         deliveryFee,
         total,
+        estimatedDeliveryMinutes,
         items: {
           create: orderItems,
         },
@@ -96,7 +103,11 @@ export class OrdersService {
           items: { include: { menuItem: true } },
           customer: { select: { id: true, firstName: true, lastName: true, email: true } },
           restaurant: { select: { id: true, name: true } },
-          delivery: true,
+          delivery: {
+            include: {
+              driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
+            },
+          },
         },
       }),
       this.prisma.order.count(),
@@ -121,7 +132,7 @@ export class OrdersService {
           restaurant: { select: { id: true, name: true } },
           delivery: {
             include: {
-              driver: { select: { id: true, firstName: true, lastName: true } },
+              driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
             },
           },
         },
@@ -148,7 +159,11 @@ export class OrdersService {
         include: {
           items: { include: { menuItem: true } },
           customer: { select: { id: true, firstName: true, lastName: true, email: true } },
-          delivery: true,
+          delivery: {
+            include: {
+              driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
+            },
+          },
         },
       }),
       this.prisma.order.count({ where }),
@@ -167,7 +182,7 @@ export class OrdersService {
         deliveryAddress: true,
         delivery: {
           include: {
-            driver: { select: { id: true, firstName: true, lastName: true } },
+            driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
           },
         },
       },
@@ -218,7 +233,7 @@ export class OrdersService {
         restaurant: { select: { id: true, name: true } },
         delivery: {
           include: {
-            driver: { select: { id: true, firstName: true, lastName: true } },
+            driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
           },
         },
       },
@@ -237,7 +252,7 @@ export class OrdersService {
             restaurant: { select: { id: true, name: true } },
             delivery: {
               include: {
-                driver: { select: { id: true, firstName: true, lastName: true } },
+                driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
               },
             },
           },
@@ -274,7 +289,11 @@ export class OrdersService {
         items: { include: { menuItem: true } },
         customer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
         deliveryAddress: true,
-        delivery: true,
+        delivery: {
+          include: {
+            driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
+          },
+        },
       },
     });
     if (!order) throw new NotFoundException('Commande non trouvée');
@@ -284,5 +303,41 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  private async calculateEta(
+    restaurant: { latitude?: number | null; longitude?: number | null },
+    deliveryAddressId?: string | null,
+  ): Promise<number> {
+    const AVG_PREP_MINUTES = 15;
+    const AVG_SPEED_KMH = 25;
+    const FALLBACK_TRAVEL_MINUTES = 15;
+
+    if (
+      !deliveryAddressId ||
+      restaurant.latitude == null ||
+      restaurant.longitude == null
+    ) {
+      return AVG_PREP_MINUTES + FALLBACK_TRAVEL_MINUTES;
+    }
+
+    const address = await this.prisma.address.findUnique({
+      where: { id: deliveryAddressId },
+      select: { latitude: true, longitude: true },
+    });
+
+    if (!address || address.latitude == null || address.longitude == null) {
+      return AVG_PREP_MINUTES + FALLBACK_TRAVEL_MINUTES;
+    }
+
+    const distanceKm = haversineDistanceKm(
+      restaurant.latitude,
+      restaurant.longitude,
+      address.latitude,
+      address.longitude,
+    );
+
+    const travelMinutes = Math.round((distanceKm / AVG_SPEED_KMH) * 60);
+    return AVG_PREP_MINUTES + Math.max(travelMinutes, 3);
   }
 }

@@ -64,11 +64,11 @@ const STATUS_MAP: Record<OrderStatusKey, StatusConfig> = {
     step: 2,
   },
   READY_FOR_PICKUP: {
-    label: 'Prête',
-    message: 'Votre commande est prête et attend le livreur.',
-    heroTitle: 'Commande prête !',
-    heroSubtitle: 'Votre commande attend qu\'un livreur vienne la récupérer.',
-    etaLabel: 'En attente du livreur',
+    label: 'Prête — en attente d\'un livreur',
+    message: 'Le restaurant a terminé la préparation. Nous cherchons un livreur pour votre commande.',
+    heroTitle: 'Commande prête, en attente d\'un livreur',
+    heroSubtitle: 'Votre commande est prête. Nous recherchons un livreur disponible à proximité.',
+    etaLabel: 'Recherche d\'un livreur',
     icon: 'package',
     color: 'purple',
     bgClass: 'bg-purple-500/10 dark:bg-purple-500/20',
@@ -76,10 +76,10 @@ const STATUS_MAP: Record<OrderStatusKey, StatusConfig> = {
     step: 3,
   },
   PICKED_UP: {
-    label: 'Récupérée',
-    message: 'Le livreur a récupéré votre commande.',
-    heroTitle: 'Le livreur a votre commande',
-    heroSubtitle: 'Le livreur a récupéré votre commande et se dirige vers vous.',
+    label: 'Récupérée par le livreur',
+    message: 'Le livreur a récupéré votre commande et se dirige vers vous.',
+    heroTitle: 'Commande récupérée par le livreur',
+    heroSubtitle: 'Le livreur a récupéré votre commande au restaurant et se dirige vers vous.',
     etaLabel: 'Le livreur arrive bientôt',
     icon: 'bike',
     color: 'purple',
@@ -88,10 +88,10 @@ const STATUS_MAP: Record<OrderStatusKey, StatusConfig> = {
     step: 4,
   },
   IN_TRANSIT: {
-    label: 'En route',
-    message: 'Votre commande est en route. Elle arrive bientôt !',
-    heroTitle: 'Votre commande est en route !',
-    heroSubtitle: 'Le livreur est en chemin. Préparez-vous à réceptionner votre commande.',
+    label: 'Votre commande est en route vers votre adresse',
+    message: 'Votre commande est en route vers votre adresse. Elle arrive bientôt !',
+    heroTitle: 'Votre commande est en route vers votre adresse',
+    heroSubtitle: 'Votre commande est en route vers votre adresse. Elle arrive bientôt !',
     etaLabel: 'Livraison en cours',
     icon: 'truck',
     color: 'indigo',
@@ -149,4 +149,64 @@ export function getProgressPercent(status: string): number {
   if (status === 'CANCELLED') return 0;
   const config = getStatusConfig(status);
   return Math.round((config.step / 6) * 100);
+}
+
+/* ── Derived UI state (combines status + driver presence) ─── */
+
+export interface AssignedDriver {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+}
+
+export interface DerivedStatusInfo {
+  label: string;
+  subtitle: string;
+  driverAssigned: boolean;
+  driverName?: string;
+}
+
+export function getDerivedStatus(
+  status: string,
+  assignedDriver?: AssignedDriver | null,
+): DerivedStatusInfo {
+  if (status === 'READY_FOR_PICKUP' && assignedDriver) {
+    return {
+      label: 'Livreur assigné',
+      subtitle: `${assignedDriver.firstName} ${assignedDriver.lastName} va récupérer votre commande.`,
+      driverAssigned: true,
+      driverName: `${assignedDriver.firstName} ${assignedDriver.lastName}`,
+    };
+  }
+
+  if (status === 'READY_FOR_PICKUP') {
+    return {
+      label: 'Commande prête — en attente d\'un livreur',
+      subtitle: 'Le restaurant a terminé la préparation. Nous cherchons un livreur.',
+      driverAssigned: false,
+    };
+  }
+
+  if (status === 'PICKED_UP') {
+    const driverName = assignedDriver
+      ? `${assignedDriver.firstName} ${assignedDriver.lastName}`
+      : 'Le livreur';
+    return {
+      label: 'Commande récupérée par le livreur',
+      subtitle: `${driverName} a récupéré votre commande et se dirige vers vous.`,
+      driverAssigned: !!assignedDriver,
+      driverName: assignedDriver ? driverName : undefined,
+    };
+  }
+
+  const config = getStatusConfig(status);
+  return {
+    label: config.label,
+    subtitle: config.message,
+    driverAssigned: !!assignedDriver,
+    driverName: assignedDriver
+      ? `${assignedDriver.firstName} ${assignedDriver.lastName}`
+      : undefined,
+  };
 }

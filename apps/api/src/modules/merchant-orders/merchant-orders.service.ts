@@ -15,7 +15,11 @@ const MERCHANT_ORDER_INCLUDE = {
   },
   restaurant: { select: { id: true, name: true } },
   deliveryAddress: true,
-  delivery: true,
+  delivery: {
+    include: {
+      driver: { select: { id: true, firstName: true, lastName: true, phone: true } },
+    },
+  },
 };
 
 @Injectable()

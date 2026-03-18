@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Hash, User, Package, Clock, CreditCard,
   Check, ChefHat, Bell, X, Loader2, MessageSquare, Sparkles,
+  UserCheck, Phone as PhoneIcon, Bike,
 } from 'lucide-react';
 import { type Order, acceptOrder, startPreparing, readyForPickup, cancelOrder } from '@/lib/api/merchant';
 import { OrderStatusBadge } from './order-status-badge';
@@ -179,6 +180,54 @@ export function OrderCard({ order, index = 0, onUpdated }: Props) {
           )}
         </div>
       )}
+
+      {order.status === 'READY_FOR_PICKUP' && (
+        <OrderDriverFooter driver={order.delivery?.driver ?? null} />
+      )}
+
+      {order.status === 'PICKED_UP' && (
+        <div className="flex items-center justify-center gap-2 border-t border-green-500/20 bg-green-500/5 px-4 py-2.5">
+          <Bike className="h-3.5 w-3.5 text-green-400" />
+          <span className="text-xs font-bold text-green-400">Commande récupérée par le livreur</span>
+        </div>
+      )}
     </motion.div>
+  );
+}
+
+function OrderDriverFooter({ driver }: { driver: { id: string; firstName: string; lastName: string; phone?: string | null } | null | undefined }) {
+  if (!driver) {
+    return (
+      <div className="flex items-center justify-center gap-2 border-t border-cyan-500/20 bg-cyan-500/5 px-4 py-2.5">
+        <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400" />
+        <span className="text-xs font-bold text-cyan-400">En attente du livreur</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-indigo-500/20 bg-indigo-500/5 px-4 py-2.5">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-500/15">
+          <UserCheck className="h-3.5 w-3.5 text-indigo-400" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-indigo-300">
+              {driver.firstName} {driver.lastName}
+            </span>
+            <span className="rounded-full bg-indigo-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-400">
+              Livreur assigné
+            </span>
+          </div>
+          {driver.phone && (
+            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+              <PhoneIcon className="h-2.5 w-2.5" />
+              {driver.phone}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

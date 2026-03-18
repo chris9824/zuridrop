@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, ClipboardList, UtensilsCrossed,
-  History, Settings, LogOut, Store, X, ChefHat,
+  History, Settings, LogOut, Store, X, ChefHat, User,
 } from 'lucide-react';
 import { clearToken } from '@/lib/api/auth';
 import { cn } from '@/lib/cn';
@@ -15,6 +15,7 @@ const NAV = [
   { id: 'kitchen', label: 'Cuisine', icon: ChefHat, path: '/merchant/kitchen' },
   { id: 'menu', label: 'Menu', icon: UtensilsCrossed, path: '/merchant/menu' },
   { id: 'history', label: 'Historique', icon: History, path: '/merchant/history' },
+  { id: 'profile', label: 'Profil', icon: User, path: '/merchant/profile' },
   { id: 'settings', label: 'Paramètres', icon: Settings, path: '/merchant/settings' },
 ] as const;
 

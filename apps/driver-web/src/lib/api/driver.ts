@@ -88,5 +88,49 @@ export const startDelivery = (id: string) =>
 export const completeDelivery = (id: string) =>
   api<Delivery>(`/api/v1/driver/deliveries/${id}/complete`, { method: 'PATCH' });
 
+export type MeResponse = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  availability: DriverAvailability;
+  isOnline: boolean;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  vehicleType?: string | null;
+  plateNumber?: string | null;
+};
+
 export const getMe = () =>
-  api<{ id: string; email: string; firstName: string; lastName: string; role: string; availability: DriverAvailability; isOnline: boolean }>('/api/v1/users/me');
+  api<MeResponse>('/api/v1/users/me');
+
+export interface DriverProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  vehicleType?: string | null;
+  plateNumber?: string | null;
+  isOnline: boolean;
+  availability: DriverAvailability;
+}
+
+export const getDriverProfile = () =>
+  api<DriverProfile>('/api/v1/driver/profile');
+
+export const updateDriverProfile = (data: {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  avatarUrl?: string;
+  vehicleType?: string;
+  plateNumber?: string;
+  isOnline?: boolean;
+}) =>
+  api<DriverProfile>('/api/v1/driver/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });

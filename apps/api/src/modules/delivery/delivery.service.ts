@@ -7,7 +7,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
-import { UpdateLocationDto, UpdateDeliveryStatusDto, UpdateAvailabilityDto, DriverAvailabilityInput } from './dto';
+import { UpdateLocationDto, UpdateDeliveryStatusDto, UpdateAvailabilityDto, DriverAvailabilityInput, UpdateDriverProfileDto } from './dto';
 import { DeliveryStatus, DriverAvailability, OrderStatus } from '@prisma/client';
 import { DispatchService } from './dispatch.service';
 import { TrackingService } from './tracking.service';
@@ -40,6 +40,76 @@ export class DeliveryService {
     private dispatchService: DispatchService,
     private trackingService: TrackingService,
   ) {}
+
+  // ─── Driver Profile ────────────────────────────────
+
+  async getDriverProfile(driverId: string) {
+    const driver = await this.prisma.user.findUnique({
+      where: { id: driverId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        avatarUrl: true,
+        vehicleType: true,
+        plateNumber: true,
+        isOnline: true,
+        availability: true,
+      },
+    });
+    if (!driver) throw new NotFoundException('Driver non trouvé');
+    return driver;
+  }
+
+  async updateDriverProfile(driverId: string, dto: UpdateDriverProfileDto) {
+    const driver = await this.prisma.user.findUnique({ where: { id: driverId } });
+    if (!driver) throw new NotFoundException('Driver non trouvé');
+
+    const data: Record<string, unknown> = {};
+    if (dto.firstName != null) data.firstName = dto.firstName;
+    if (dto.lastName != null) data.lastName = dto.lastName;
+    if (dto.phone != null) data.phone = dto.phone;
+    if (dto.avatarUrl != null) data.avatarUrl = dto.avatarUrl;
+    if (dto.vehicleType != null) data.vehicleType = dto.vehicleType;
+    if (dto.plateNumber != null) data.plateNumber = dto.plateNumber;
+    if (dto.isOnline != null) {
+      if (dto.isOnline) {
+        data.availability = DriverAvailability.AVAILABLE;
+        data.isOnline = true;
+      } else {
+        const activeDelivery = await this.prisma.delivery.findFirst({
+          where: { driverId, status: { in: ACTIVE_STATUSES } },
+        });
+        if (activeDelivery) {
+          throw new BadRequestException(
+            'Impossible de passer hors ligne avec une livraison en cours.',
+          );
+        }
+        data.availability = DriverAvailability.OFFLINE;
+        data.isOnline = false;
+      }
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: driverId },
+      data,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        avatarUrl: true,
+        vehicleType: true,
+        plateNumber: true,
+        isOnline: true,
+        availability: true,
+      },
+    });
+    return updated;
+  }
 
   // ─── Driver Availability ────────────────────────────
 

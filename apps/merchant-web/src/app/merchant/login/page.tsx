@@ -4,6 +4,14 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Store, Mail, Lock, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
 import { loginMerchant, isLoggedIn } from '@/lib/api/auth';
 
 export default function LoginPage() {
@@ -16,7 +24,7 @@ export default function LoginPage() {
 
   if (typeof window !== 'undefined' && isLoggedIn()) {
     router.replace('/merchant');
-    return null;
+    return <LoadingScreen />;
   }
 
   const handleSubmit = async (e: FormEvent) => {

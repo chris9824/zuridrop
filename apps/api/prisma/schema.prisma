@@ -63,10 +63,13 @@ model User {
   firstName    String   @map("first_name")
   lastName     String   @map("last_name")
   phone        String?
+  avatarUrl    String?  @map("avatar_url")
   role         Role     @default(CUSTOMER)
   isActive     Boolean  @default(true) @map("is_active")
   isOnline     Boolean  @default(false) @map("is_online")
   availability DriverAvailability @default(OFFLINE) @map("availability")
+  vehicleType  String?  @map("vehicle_type")
+  plateNumber  String?  @map("plate_number")
   latitude     Float?
   longitude    Float?
   createdAt    DateTime @default(now()) @map("created_at")
@@ -105,21 +108,23 @@ model Address {
 // ─── Restaurant ───────────────────────────────────────
 
 model Restaurant {
-  id          String   @id @default(cuid())
-  merchantId  String   @map("merchant_id")
-  name        String
-  description String?
-  phone       String?
-  imageUrl    String?  @map("image_url")
-  street      String?
-  city        String?
-  latitude    Float?
-  longitude   Float?
-  isOpen      Boolean  @default(false) @map("is_open")
-  openingTime String?  @map("opening_time")
-  closingTime String?  @map("closing_time")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id                     String   @id @default(cuid())
+  merchantId             String   @map("merchant_id")
+  name                   String
+  description             String?
+  cuisineType            String?  @map("cuisine_type")
+  phone                  String?
+  imageUrl               String?  @map("image_url")
+  street                 String?
+  city                   String?
+  latitude               Float?
+  longitude              Float?
+  isOpen                 Boolean  @default(false) @map("is_open")
+  openingTime            String?  @map("opening_time")
+  closingTime            String?  @map("closing_time")
+  preparationTimeMinutes Int?     @map("preparation_time_minutes")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
 
   merchant  User       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   menuItems MenuItem[]
@@ -161,6 +166,7 @@ model Order {
   deliveryFee     Float         @default(0) @map("delivery_fee")
   total           Float         @default(0)
   notes           String?
+  estimatedDeliveryMinutes Int?  @map("estimated_delivery_minutes")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 

@@ -4,22 +4,18 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChefHat, Clock, Bell, Maximize2, Minimize2,
-  Volume2, VolumeX, RefreshCw, Sparkles,
+  RefreshCw, Sparkles,
 } from 'lucide-react';
 import { getIncomingOrders, getActiveOrders, type Order } from '@/lib/api/merchant';
 import { KitchenColumn } from '@/components/merchant/kitchen-column';
-import { useToast } from '@/components/merchant/toast';
 import { usePolling } from '@/hooks/use-polling';
 import { detectNewOrderIds } from '@/lib/order-utils';
-import { cn } from '@/lib/cn';
 
 export default function KitchenPage() {
-  const { toast } = useToast();
   const [pending, setPending] = useState<Order[]>([]);
   const [preparing, setPreparing] = useState<Order[]>([]);
   const [ready, setReady] = useState<Order[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [bannerCount, setBannerCount] = useState(0);
   const prevPending = useRef<Order[]>([]);
   const initialized = useRef(false);
@@ -38,9 +34,6 @@ export default function KitchenPage() {
       if (initialized.current) {
         const newIds = detectNewOrderIds(prevPending.current, newPending);
         if (newIds.length > 0) {
-          if (soundEnabled) playNotification();
-          toast('info', newIds.length === 1 ? 'Nouvelle commande !' : `${newIds.length} nouvelles commandes !`);
-
           setBannerCount(newIds.length);
           if (bannerTimer.current) clearTimeout(bannerTimer.current);
           bannerTimer.current = setTimeout(() => setBannerCount(0), 6000);
@@ -55,7 +48,7 @@ export default function KitchenPage() {
     } catch {
       /* graceful */
     }
-  }, [soundEnabled, toast]);
+  }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
   usePolling(fetchAll, 5000);
@@ -114,17 +107,6 @@ export default function KitchenPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className={cn(
-              'rounded-xl p-2.5 transition-colors',
-              soundEnabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground',
-            )}
-            title={soundEnabled ? 'Désactiver le son' : 'Activer le son'}
-          >
-            {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-          </button>
-
-          <button
             onClick={fetchAll}
             className="rounded-xl bg-muted p-2.5 text-muted-foreground transition-colors hover:text-foreground"
             title="Rafraîchir"
@@ -168,14 +150,4 @@ export default function KitchenPage() {
       </div>
     </div>
   );
-}
-
-function playNotification() {
-  try {
-    const audio = new Audio('/notification.mp3');
-    audio.volume = 1;
-    audio.play().catch(() => {});
-  } catch {
-    /* audio not available */
-  }
 }

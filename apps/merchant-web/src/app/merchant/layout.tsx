@@ -5,7 +5,16 @@ import { useRouter, usePathname } from 'next/navigation';
 import { isLoggedIn } from '@/lib/api/auth';
 import { getMyRestaurants, type Restaurant } from '@/lib/api/merchant';
 import { Sidebar } from '@/components/merchant/sidebar';
-import { Menu } from 'lucide-react';
+import { NewOrderNotifier } from '@/components/merchant/new-order-notifier';
+import { Menu, Loader2 } from 'lucide-react';
+
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
 
 export default function MerchantLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -38,7 +47,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
     fetchRestaurant();
   }, [router, fetchRestaurant, isLoginPage]);
 
-  if (!checked) return null;
+  if (!checked) return <LoadingScreen />;
 
   if (isLoginPage) return <>{children}</>;
 
@@ -57,9 +66,10 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-sm font-bold text-foreground">
+          <span className="flex-1 text-sm font-bold text-foreground">
             {restaurant?.name || 'ZuriDrop Restaurant'}
           </span>
+          <NewOrderNotifier />
         </header>
         <main className="flex-1 overflow-y-auto">
           {children}

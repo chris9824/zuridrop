@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Hash, User, Package, MessageSquare, Loader2,
   Check, ChefHat, Bell, X, Clock, Sparkles,
+  UserCheck, Phone, Bike,
 } from 'lucide-react';
 import { type Order, acceptOrder, startPreparing, readyForPickup, cancelOrder } from '@/lib/api/merchant';
 import { useToast } from './toast';
@@ -207,11 +208,52 @@ export function KitchenOrderCard({ order, index = 0, onUpdated }: Props) {
       )}
 
       {order.status === 'READY_FOR_PICKUP' && (
-        <div className="flex items-center justify-center gap-2 border-t border-cyan-500/20 bg-cyan-500/5 px-4 py-4">
-          <div className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
-          <span className="text-sm font-bold text-cyan-400">En attente du livreur</span>
+        <ReadyForPickupFooter driver={order.delivery?.driver ?? null} />
+      )}
+
+      {order.status === 'PICKED_UP' && (
+        <div className="flex items-center justify-center gap-2 border-t border-green-500/20 bg-green-500/5 px-4 py-3">
+          <Bike className="h-4 w-4 text-green-400" />
+          <span className="text-sm font-bold text-green-400">Commande récupérée</span>
         </div>
       )}
     </motion.div>
+  );
+}
+
+function ReadyForPickupFooter({ driver }: { driver: { id: string; firstName: string; lastName: string; phone?: string | null } | null | undefined }) {
+  if (!driver) {
+    return (
+      <div className="flex items-center justify-center gap-2 border-t border-cyan-500/20 bg-cyan-500/5 px-4 py-3">
+        <div className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
+        <span className="text-sm font-bold text-cyan-400">En attente du livreur</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-indigo-500/20 bg-indigo-500/5 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500/15">
+          <UserCheck className="h-4 w-4 text-indigo-400" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-indigo-300">
+              {driver.firstName} {driver.lastName}
+            </span>
+            <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+              Livreur assigné
+            </span>
+          </div>
+          {driver.phone && (
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+              <Phone className="h-3 w-3" />
+              {driver.phone}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

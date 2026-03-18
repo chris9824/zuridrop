@@ -36,7 +36,17 @@ export interface Order {
   customer: { id: string; firstName: string; lastName: string; email?: string; phone?: string | null };
   restaurant: { id: string; name: string };
   deliveryAddress?: { street: string; city: string } | null;
-  delivery?: { id: string; status: string; driverId?: string } | null;
+  delivery?: {
+    id: string;
+    status: string;
+    driverId?: string;
+    driver?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      phone?: string | null;
+    } | null;
+  } | null;
 }
 
 export interface OrdersResponse {
@@ -63,6 +73,7 @@ export interface Restaurant {
   id: string;
   name: string;
   description?: string | null;
+  cuisineType?: string | null;
   phone?: string | null;
   street?: string | null;
   city?: string | null;
@@ -70,10 +81,30 @@ export interface Restaurant {
   isOpen: boolean;
   openingTime?: string | null;
   closingTime?: string | null;
+  preparationTimeMinutes?: number | null;
   latitude?: number | null;
   longitude?: number | null;
   menuItems: MenuItem[];
   createdAt: string;
+}
+
+export interface MerchantProfile {
+  user: { id: string; firstName: string; lastName: string; email: string; phone?: string | null };
+  restaurant: Restaurant | null;
+}
+
+export interface UpdateMerchantProfilePayload {
+  name?: string;
+  description?: string;
+  cuisineType?: string;
+  phone?: string;
+  street?: string;
+  city?: string;
+  imageUrl?: string;
+  preparationTimeMinutes?: number;
+  openingTime?: string;
+  closingTime?: string;
+  isOpen?: boolean;
 }
 
 /* ── Orders ───────────────────────────────────── */
@@ -100,6 +131,58 @@ export const cancelOrder = (orderId: string, reason?: string) =>
   api<Order>(`/api/v1/merchant/orders/${orderId}/cancel`, {
     method: 'PATCH',
     body: JSON.stringify({ reason }),
+  });
+
+/* ── Dashboard stats ─────────────────────────── */
+
+export interface Last7DaysStats {
+  ordersCount: number;
+  revenue: number;
+  delivered: number;
+  cancelled: number;
+}
+
+export interface TopItem {
+  name: string;
+  quantity: number;
+}
+
+export interface DailyDataPoint {
+  date: string;
+  orders: number;
+  revenue: number;
+}
+
+export interface DashboardStats {
+  todayTotal: number;
+  todayDelivered: number;
+  todayCancelled: number;
+  todayRevenue: number;
+  avgBasket: number;
+  activeCount: number;
+  pendingCount: number;
+  preparingCount: number;
+  readyCount: number;
+  acceptedCount: number;
+  conversionRate: number;
+  last7Days: Last7DaysStats;
+  totalRevenue: number;
+  topItems: TopItem[];
+  dailyData: DailyDataPoint[];
+}
+
+export const getDashboardStats = () =>
+  api<DashboardStats>('/api/v1/merchant/dashboard/stats');
+
+/* ── Profile ─────────────────────────────────── */
+
+export const getMerchantProfile = () =>
+  api<MerchantProfile>('/api/v1/merchant/profile');
+
+export const updateMerchantProfile = (data: UpdateMerchantProfilePayload) =>
+  api<MerchantProfile>(`/api/v1/merchant/profile`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
   });
 
 /* ── Restaurants ──────────────────────────────── */

@@ -31,9 +31,9 @@ export function CategoryRow({ selected, onSelect }: CategoryRowProps) {
 
   return (
     <div className="py-2">
-      {/* Mobile: horizontal scroll */}
+      {/* Mobile: horizontal scroll — flex-nowrap évite le wrap en colonne */}
       <div
-        className="flex gap-2 overflow-x-auto px-4 scrollbar-hide md:hidden"
+        className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide md:hidden"
         style={{ scrollSnapType: 'x mandatory' }}
       >
         {categories.map((cat) => (
@@ -43,8 +43,8 @@ export function CategoryRow({ selected, onSelect }: CategoryRowProps) {
         ))}
       </div>
 
-      {/* Desktop: flex wrap */}
-      <div className="hidden flex-wrap gap-2 md:flex">
+      {/* Desktop: flex wrap — hidden sur mobile pour éviter doublon */}
+      <div className="hidden flex-row flex-wrap gap-2 md:flex">
         {categories.map(chip)}
       </div>
     </div>

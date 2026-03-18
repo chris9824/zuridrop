@@ -22,6 +22,16 @@ export class UpdateRestaurantDto {
   @IsString()
   imageUrl?: string;
 
+  @ApiPropertyOptional({ example: 'Ivoirienne' })
+  @IsOptional()
+  @IsString()
+  cuisineType?: string;
+
+  @ApiPropertyOptional({ example: 15 })
+  @IsOptional()
+  @IsNumber()
+  preparationTimeMinutes?: number;
+
   @ApiPropertyOptional({ example: '45 Rue des Jardins' })
   @IsOptional()
   @IsString()

@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiResponse } from '@ne
 import { Role } from '@prisma/client';
 import { DeliveryService } from './delivery.service';
 import { DispatchService } from './dispatch.service';
-import { CancelDeliveryDto, RejectDeliveryDto, UpdateAvailabilityDto } from './dto';
+import { CancelDeliveryDto, RejectDeliveryDto, UpdateAvailabilityDto, UpdateDriverProfileDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../../common/guards';
 import { CurrentUser, Roles } from '../../common/decorators';
 
@@ -17,6 +17,20 @@ export class DriverController {
     private readonly deliveryService: DeliveryService,
     private readonly dispatchService: DispatchService,
   ) {}
+
+  // ─── Profile ────────────────────────────────────────
+
+  @Get('profile')
+  @ApiOperation({ summary: 'Mon profil driver' })
+  getProfile(@CurrentUser() user: { id: string }) {
+    return this.deliveryService.getDriverProfile(user.id);
+  }
+
+  @Patch('profile')
+  @ApiOperation({ summary: 'Mettre à jour mon profil driver' })
+  updateProfile(@CurrentUser() user: { id: string }, @Body() dto: UpdateDriverProfileDto) {
+    return this.deliveryService.updateDriverProfile(user.id, dto);
+  }
 
   // ─── Availability ───────────────────────────────────
 

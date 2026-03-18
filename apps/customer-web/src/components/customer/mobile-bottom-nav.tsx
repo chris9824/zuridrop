@@ -10,12 +10,13 @@ const navItems = [
   { id: 'home', label: 'Accueil', icon: Home, href: '/' },
   { id: 'search', label: 'Recherche', icon: Search, href: '/?focus=search' },
   { id: 'orders', label: 'Commandes', icon: ClipboardList, href: '/orders' },
-  { id: 'profile', label: 'Compte', icon: User, href: '/orders' },
+  { id: 'profile', label: 'Compte', icon: User, href: '/account' },
 ];
 
 function isActive(pathname: string, item: typeof navItems[number]): boolean {
   if (item.id === 'home') return pathname === '/';
-  if (item.id === 'orders' || item.id === 'profile') return pathname.startsWith('/orders');
+  if (item.id === 'orders') return pathname.startsWith('/orders');
+  if (item.id === 'profile') return pathname.startsWith('/account');
   return false;
 }
 

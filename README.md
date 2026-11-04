@@ -1,155 +1,178 @@
 # ZuriDrop
 
-Plateforme de livraison et gestion marchande — Monorepo pnpm.
+### Full-Stack Food Delivery Platform
 
----
+**ZuriDrop** is a multi-application food delivery platform built with a TypeScript monorepo architecture. It brings together customers, restaurant merchants, delivery drivers, and platform administrators through dedicated applications connected to a centralized backend.
+
+The project explores the architecture and development of a multi-role delivery system, including order management, restaurant operations, delivery workflows, promotions, and customer reviews.
+
+## Key Features
+
+### Customer Application
+- Browse restaurants and explore available menus.
+- Manage customer account information and delivery addresses.
+- Place orders and access order history.
+- Follow order progress through a tracking interface.
+- Apply promotional codes during checkout.
+- Submit restaurant and delivery reviews.
+
+### Merchant Dashboard
+- Manage restaurant information and settings.
+- Manage menu items.
+- Review incoming orders.
+- Access a kitchen workflow and order history.
+- Update restaurant availability and preparation settings.
+
+### Driver Dashboard
+- Access delivery assignments.
+- View delivery details.
+- Manage delivery workflow.
+- Review delivery history.
+- Manage driver profile information.
+
+### Administration Dashboard
+- Access platform administration views.
+- Review customers, restaurants, drivers, and orders.
+- Monitor platform activity through a centralized dashboard.
+
+## Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| Backend | NestJS, Node.js, TypeScript |
+| Web applications | Next.js 14, React, TypeScript |
+| Database | PostgreSQL 16, Prisma ORM |
+| Caching and infrastructure | Redis 7, Docker |
+| Mobile application | Expo, React Native |
+| Monorepo | pnpm workspaces |
+| API documentation | Swagger / OpenAPI |
+| Code quality | ESLint, Prettier, TypeScript |
 
 ## Architecture
 
-```
+```text
 zuridrop/
 ├── apps/
-│   ├── api/              # NestJS + TypeScript (port 3001)
-│   ├── merchant-web/     # Next.js 14 – Dashboard marchand (port 3002)
-│   ├── admin-web/        # Next.js 14 – Panneau admin (port 3003)
-│   └── mobile/           # Expo React Native – App client
+│   ├── api/              # NestJS REST API
+│   ├── customer-web/     # Customer application
+│   ├── merchant-web/     # Merchant dashboard
+│   ├── driver-web/       # Driver application
+│   ├── admin-web/        # Administration dashboard
+│   └── mobile/           # Expo React Native application
 ├── packages/
-│   ├── shared/           # Types, enums, DTOs partagés
-│   └── ui/               # Composants UI réutilisables
-├── docker-compose.yml    # PostgreSQL 16 + Redis 7
-├── tsconfig.base.json    # Config TypeScript partagée
-└── pnpm-workspace.yaml   # Configuration du monorepo
+│   ├── shared/           # Shared types and utilities
+│   └── ui/               # Shared UI components
+├── docker-compose.yml
+└── pnpm-workspace.yaml
 ```
 
----
+The backend provides centralized business logic and data access. Each web application serves a distinct user role.
 
-## Prérequis
+## Local Development
 
-| Outil       | Version minimale |
-|-------------|-----------------|
-| Node.js     | >= 20.0.0       |
-| pnpm        | >= 9.0.0        |
-| Docker      | >= 24.0         |
-| Docker Compose | >= 2.0       |
+### Requirements
 
-### Installation de pnpm (si nécessaire)
+- Node.js 20+
+- pnpm 9+
+- Docker 24+
+- Docker Compose 2+
 
-```bash
-corepack enable
-corepack prepare pnpm@9.15.4 --activate
-```
-
----
-
-## Installation
+### Clone the repository
 
 ```bash
-# 1. Cloner le repo
-git clone <repo-url> zuridrop
+git clone https://github.com/chris9824/zuridrop.git
 cd zuridrop
-
-# 2. Copier les fichiers d'environnement
-cp .env.example .env
-cp apps/api/.env.example apps/api/.env
-cp apps/merchant-web/.env.example apps/merchant-web/.env
-cp apps/admin-web/.env.example apps/admin-web/.env
-cp apps/mobile/.env.example apps/mobile/.env
-
-# 3. Installer les dépendances
 pnpm install
+```
 
-# 4. Démarrer l'infrastructure locale
+### Configure environment variables
+
+Use the provided `.env.example` files as configuration templates.
+
+Configure the PostgreSQL connection, Redis connection, API endpoints, and any required application-specific settings.
+
+Do not commit real credentials or production secrets.
+
+### Start the infrastructure
+
+```bash
 pnpm docker:up
+```
 
-# 5. Générer le client Prisma & pousser le schema
+For a **fresh development database**, generate the Prisma client and initialize the schema according to the project's database configuration.
+
+```bash
 pnpm db:generate
-pnpm db:push
 ```
 
----
+**Important:** Do not run database synchronization or reset commands against an existing database without reviewing their effects and creating a backup.
 
-## Démarrage
+### Run the applications
 
-### Tout démarrer en parallèle
-
-```bash
-pnpm dev
-```
-
-### Démarrer individuellement
+Start the services using the corresponding workspace commands:
 
 ```bash
-# API NestJS (http://localhost:3001)
 pnpm --filter @zuridrop/api dev
-
-# Dashboard marchand (http://localhost:3002)
+pnpm --filter @zuridrop/customer-web dev
 pnpm --filter @zuridrop/merchant-web dev
-
-# Panneau admin (http://localhost:3003)
+pnpm --filter @zuridrop/driver-web dev
 pnpm --filter @zuridrop/admin-web dev
-
-# App mobile (Expo)
-pnpm --filter @zuridrop/mobile dev
 ```
 
----
+### Local URLs
 
-## Scripts disponibles
+| Service | URL |
+|---|---|
+| Backend API | http://localhost:3001 |
+| API documentation | http://localhost:3001/api/docs |
+| Customer application | http://localhost:3004 |
+| Merchant dashboard | http://localhost:3002 |
+| Driver dashboard | http://localhost:3005 |
+| Admin dashboard | http://localhost:3003 |
 
-| Script              | Description                                  |
-|---------------------|----------------------------------------------|
-| `pnpm dev`          | Démarre toutes les apps en mode développement |
-| `pnpm build`        | Build toutes les apps                         |
-| `pnpm lint`         | Lint tout le monorepo                         |
-| `pnpm format`       | Formate le code avec Prettier                 |
-| `pnpm format:check` | Vérifie le formatage                          |
-| `pnpm docker:up`    | Démarre PostgreSQL + Redis                    |
-| `pnpm docker:down`  | Arrête les containers Docker                  |
-| `pnpm db:generate`  | Génère le client Prisma                       |
-| `pnpm db:migrate`   | Exécute les migrations Prisma                 |
-| `pnpm db:push`      | Pousse le schema vers la DB                   |
-| `pnpm db:studio`    | Ouvre Prisma Studio                           |
+## Build Verification
 
----
+The backend and all four Next.js web applications have successfully completed individual production builds during local development.
 
-## Infrastructure locale
-
-| Service    | Port  | Credentials                        |
-|------------|-------|------------------------------------|
-| PostgreSQL | 5432  | `zuridrop` / `zuridrop_secret`     |
-| Redis      | 6379  | (pas de mot de passe par défaut)   |
-
----
-
-## Conventions
-
-### Nommage des packages
-
-- Apps : `@zuridrop/api`, `@zuridrop/merchant-web`, `@zuridrop/admin-web`, `@zuridrop/mobile`
-- Packages : `@zuridrop/shared`, `@zuridrop/ui`
-
-### Code style
-
-- **TypeScript strict** activé partout
-- **Prettier** pour le formatage automatique
-- **ESLint** pour le linting
-- **EditorConfig** pour la cohérence IDE
-- Fin de ligne : LF (Unix)
-- Indentation : 2 espaces
-- Guillemets simples (`'`) en TypeScript/JavaScript
-
-### Branches Git (recommandé)
-
-```
-main            → production
-develop         → branche de développement
-feature/*       → nouvelles features
-fix/*           → corrections de bugs
-hotfix/*        → corrections urgentes en production
+```bash
+pnpm --filter @zuridrop/api build
+pnpm --filter @zuridrop/customer-web build
+pnpm --filter @zuridrop/merchant-web build
+pnpm --filter @zuridrop/driver-web build
+pnpm --filter @zuridrop/admin-web build
 ```
 
----
+Successful builds do not replace end-to-end functional testing or production deployment validation.
 
-## Licence
+## Screenshots and Demo
 
-Projet privé – Tous droits réservés.
+Screenshots of the customer, merchant, driver, and administration interfaces will be added here.
+
+A complete demonstration of the customer-to-delivery workflow is also planned.
+
+## Engineering Focus
+
+ZuriDrop demonstrates experience with:
+
+- Full-stack TypeScript development.
+- Modular backend architecture.
+- Multi-role application design.
+- REST API integration.
+- Relational database modeling.
+- Order and delivery workflows.
+- Monorepo organization.
+- Containerized development environments.
+
+## Project Status
+
+**Active development — portfolio project.**
+
+The backend and four web applications have passed local production build checks. Functional verification, deployment preparation, and documentation improvements remain ongoing.
+
+## Repository
+
+https://github.com/chris9824/zuridrop
+
+## License
+
+All rights reserved. No open-source license is currently specified.

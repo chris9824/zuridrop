@@ -70,7 +70,7 @@ function SmoothDriverMarker({ position }: { position: Coords }) {
   );
 }
 
-export function LiveTrackingMap({ restaurant, customer, driver }: Props) {
+export default function LiveTrackingMap({ restaurant, customer, driver }: Props) {
   const allPoints = useMemo(() => {
     const pts: Coords[] = [];
     if (restaurant) pts.push(restaurant);
@@ -94,15 +94,17 @@ export function LiveTrackingMap({ restaurant, customer, driver }: Props) {
   }, [restaurant, customer, driver]);
 
   return (
-    <div className="h-[280px] w-full overflow-hidden rounded-2xl border border-border">
+    <div className="zd-live-map h-[280px] w-full overflow-hidden rounded-2xl border border-border">
       <MapContainer
         center={[center.lat, center.lng]}
         zoom={14}
         className="h-full w-full"
         zoomControl={false}
-        attributionControl={false}
       >
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
         <FitBounds points={allPoints} />
 

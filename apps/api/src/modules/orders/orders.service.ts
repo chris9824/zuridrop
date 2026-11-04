@@ -13,6 +13,9 @@ import { validateTransition } from '../../common/utils/order-transitions';
 import { isRestaurantOpenNow } from '../../common/utils/restaurant-hours';
 import { haversineDistanceKm } from '../../common/utils/geo-distance';
 import { DispatchService } from '../delivery/dispatch.service';
+import { PromotionsService } from '../promotions/promotions.service';
+
+const DELIVERY_FEE = 500;
 
 @Injectable()
 export class OrdersService {
@@ -21,6 +24,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private dispatchService: DispatchService,
+    private promotionsService: PromotionsService,
   ) {}
 
   async create(customerId: string, dto: CreateOrderDto) {
@@ -58,8 +62,28 @@ export class OrdersService {
       };
     });
 
-    const deliveryFee = 500; // Fixed delivery fee (simple)
-    const total = subtotal + deliveryFee;
+    const deliveryFee = DELIVERY_FEE;
+    let discountAmount = 0;
+    let promotionId: string | null = null;
+    let promoCode: string | null = null;
+
+    if (dto.promoCode?.trim()) {
+      const promoResult = await this.promotionsService.validate({
+        code: dto.promoCode.trim(),
+        customerId,
+        restaurantId: dto.restaurantId,
+        subtotal,
+        deliveryFee: DELIVERY_FEE,
+      });
+      if (!promoResult.valid) {
+        throw new BadRequestException(promoResult.message ?? 'Code promo invalide');
+      }
+      discountAmount = promoResult.discountAmount;
+      promotionId = promoResult.promotionId ?? null;
+      promoCode = promoResult.promoCode ?? null;
+    }
+
+    const total = Math.max(0, subtotal + deliveryFee - discountAmount);
 
     const estimatedDeliveryMinutes = await this.calculateEta(
       restaurant,
@@ -76,6 +100,9 @@ export class OrdersService {
         subtotal,
         deliveryFee,
         total,
+        discountAmount,
+        promotionId,
+        promoCode,
         estimatedDeliveryMinutes,
         items: {
           create: orderItems,
@@ -86,6 +113,10 @@ export class OrdersService {
         restaurant: { select: { id: true, name: true } },
       },
     });
+
+    if (promotionId) {
+      await this.promotionsService.incrementUsage(promotionId);
+    }
 
     return order;
   }

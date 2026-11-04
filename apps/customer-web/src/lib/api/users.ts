@@ -11,6 +11,7 @@ export interface UserProfile {
   avatarUrl?: string | null;
   role?: string;
   addresses?: Address[];
+  defaultAddressId?: string | null;
 }
 
 export interface Address {
@@ -30,6 +31,7 @@ export interface UpdateProfilePayload {
   lastName?: string;
   phone?: string;
   avatarUrl?: string;
+  defaultAddressId?: string | null;
 }
 
 export interface CreateAddressPayload {
@@ -68,12 +70,6 @@ export async function updateMe(payload: UpdateProfilePayload): Promise<UserProfi
   return res.json();
 }
 
-export async function getMyAddresses(): Promise<Address[]> {
-  const res = await authFetch(`${API_BASE}/api/v1/users/me/addresses`);
-  if (res.status === 401) throw new Error('AUTH_REQUIRED');
-  if (!res.ok) throw new Error(`Erreur ${res.status}`);
-  return res.json();
-}
 
 export async function createAddress(payload: CreateAddressPayload): Promise<Address> {
   const res = await authFetch(`${API_BASE}/api/v1/users/me/addresses`, {

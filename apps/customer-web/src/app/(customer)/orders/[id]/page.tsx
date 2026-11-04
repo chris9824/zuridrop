@@ -37,6 +37,7 @@ import type { StatusConfig, AssignedDriver } from '@/lib/order-status';
 import { OrderStatusBadge } from '@/components/orders/order-status-badge';
 import { OrderTimeline } from '@/components/orders/order-timeline';
 import { TrackingSection } from '@/components/orders/tracking-section';
+import { ReviewSection } from '@/components/orders/review-section';
 import { LoginForm } from '@/components/checkout/login-form';
 
 const POLL_INTERVAL_MS = 10_000;
@@ -229,6 +230,28 @@ export default function OrderDetailPage() {
             {/* ╔══ LIVE TRACKING — Carte livreur ═══════ */}
             {(order.status === 'IN_TRANSIT' || order.status === 'PICKED_UP' || order.status === 'DELIVERED') && (
               <TrackingSection orderId={orderId} orderStatus={order.status} />
+            )}
+
+            {/* ╔══ AVIS — Après livraison ═══════════ */}
+            {order.status === 'DELIVERED' && order.restaurant && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12 }}
+                className="rounded-2xl border border-border bg-card p-6"
+              >
+                <ReviewSection
+                  orderId={order.id}
+                  restaurantId={order.restaurant.id}
+                  restaurantName={order.restaurant.name}
+                  driverId={order.delivery?.driverId ?? order.delivery?.driver?.id ?? null}
+                  driverName={
+                    order.delivery?.driver
+                      ? `${order.delivery.driver.firstName} ${order.delivery.driver.lastName}`
+                      : null
+                  }
+                />
+              </motion.div>
             )}
 
             {/* ╔══ 2-column layout desktop ════════════ */}

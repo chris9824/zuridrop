@@ -15,6 +15,8 @@ import {
   Trash2,
   Check,
   X,
+  Star,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -124,7 +126,7 @@ export default function AccountPage() {
             className="space-y-8"
           >
             <PersonalInfoSection profile={profile} onSaved={() => loadData()} />
-            <AddressSection addresses={addresses} onUpdated={() => loadData()} />
+            <AddressSection addresses={addresses} defaultAddressId={profile.defaultAddressId ?? null} onUpdated={() => loadData()} />
             <OrderHistorySection orders={orders} />
           </motion.div>
         )}
@@ -256,7 +258,7 @@ function PersonalInfoSection({ profile, onSaved }: { profile: UserProfile; onSav
 
 const ADDRESS_TYPES = ['Maison', 'Bureau', 'Autre'] as const;
 
-function AddressSection({ addresses, onUpdated }: { addresses: Address[]; onUpdated: () => void }) {
+function AddressSection({ addresses, defaultAddressId, onUpdated }: { addresses: Address[]; defaultAddressId: string | null; onUpdated: () => void }) {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<UpdateAddressPayload & { label: string }>({
@@ -274,18 +276,33 @@ function AddressSection({ addresses, onUpdated }: { addresses: Address[]; onUpda
     country: "Côte d'Ivoire",
   });
   const [saving, setSaving] = useState(false);
+  const [addressError, setAddressError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
+
+  const handleSetDefault = async (addrId: string) => {
+    setSettingDefaultId(addrId);
+    try {
+      await updateMe({ defaultAddressId: addrId });
+      onUpdated();
+    } catch {
+      // ignore
+    } finally {
+      setSettingDefaultId(null);
+    }
+  };
 
   const handleAdd = async () => {
     if (!newAddr.street.trim() || !newAddr.city.trim()) return;
     setSaving(true);
+    setAddressError(null);
     try {
       await createAddress(newAddr);
       setNewAddr({ label: 'Maison', street: '', city: '', zipCode: '', country: "Côte d'Ivoire" });
       setAdding(false);
       onUpdated();
-    } catch {
-      // ignore
+    } catch (err) {
+      setAddressError(err instanceof Error ? err.message : 'Impossible d\'ajouter cette adresse');
     } finally {
       setSaving(false);
     }
@@ -305,6 +322,7 @@ function AddressSection({ addresses, onUpdated }: { addresses: Address[]; onUpda
   const handleSaveEdit = async () => {
     if (!editingId || !editForm.street?.trim() || !editForm.city?.trim()) return;
     setSaving(true);
+    setAddressError(null);
     try {
       await updateAddress(editingId, {
         label: editForm.label,
@@ -315,12 +333,14 @@ function AddressSection({ addresses, onUpdated }: { addresses: Address[]; onUpda
       });
       setEditingId(null);
       onUpdated();
+    } catch (err) {
+      setAddressError(err instanceof Error ? err.message : 'Impossible de modifier cette adresse');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCancelEdit = () => setEditingId(null);
+  const handleCancelEdit = () => { setEditingId(null); setAddressError(null); };
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -346,6 +366,24 @@ function AddressSection({ addresses, onUpdated }: { addresses: Address[]; onUpda
           </Button>
         )}
       </div>
+
+      {addressError && (
+        <div
+          className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          role="alert"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          {addressError}
+          <button
+            type="button"
+            onClick={() => setAddressError(null)}
+            className="ml-auto rounded p-1 hover:bg-destructive/20"
+            aria-label="Fermer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {adding && (
         <motion.div
@@ -387,7 +425,7 @@ function AddressSection({ addresses, onUpdated }: { addresses: Address[]; onUpda
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
               Enregistrer
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setAdding(false)}>
+            <Button variant="ghost" size="sm" onClick={() => { setAdding(false); setAddressError(null); }}>
               Annuler
             </Button>
           </div>
@@ -450,14 +488,34 @@ function AddressSection({ addresses, onUpdated }: { addresses: Address[]; onUpda
               key={addr.id}
               className="flex items-start justify-between gap-3 rounded-xl border border-border bg-muted/20 p-4"
             >
-              <div>
-                <p className="font-medium text-foreground">{addr.label}</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-foreground">{addr.label}</p>
+                  {defaultAddressId === addr.id && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                      <Star className="h-3 w-3 fill-current" />
+                      Par défaut
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {addr.street}, {addr.city}
                   {addr.zipCode && ` ${addr.zipCode}`}
                 </p>
               </div>
-              <div className="flex gap-1 shrink-0">
+              <div className="flex shrink-0 items-center gap-1">
+                {defaultAddressId !== addr.id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-muted-foreground hover:text-primary"
+                    onClick={() => handleSetDefault(addr.id)}
+                    disabled={settingDefaultId === addr.id}
+                  >
+                    {settingDefaultId === addr.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Star className="h-3.5 w-3.5" />}
+                    Défaut
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"

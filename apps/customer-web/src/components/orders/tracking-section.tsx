@@ -6,10 +6,10 @@ import { motion } from 'framer-motion';
 import { MapPin, Navigation, Truck, CheckCircle2, Loader2 } from 'lucide-react';
 import { getOrderTracking, type TrackingData } from '@/lib/api/orders';
 
-const LiveTrackingMap = dynamic(
-  () => import('./live-tracking-map').then((m) => ({ default: m.LiveTrackingMap })),
-  { ssr: false, loading: () => <MapSkeleton /> },
-);
+const LiveTrackingMap = dynamic(() => import('./live-tracking-map'), {
+  ssr: false,
+  loading: () => <MapSkeleton />,
+});
 
 function MapSkeleton() {
   return (

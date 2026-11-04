@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Clock, Phone, Star, Bike, UtensilsCrossed, AlertTriangle } from 'lucide-react';
 import { getRestaurantById, NotFoundError } from '@/lib/api/restaurants';
+import { getRestaurantReviewSummary } from '@/lib/api/reviews';
 import type { ApiRestaurantDetail } from '@/lib/api/schemas';
 import { getRestaurantAvailability, AVAILABILITY_BADGE_STYLES } from '@/lib/availability';
 import { RestaurantMenuSection } from '@/components/menu/restaurant-menu-section';
@@ -54,8 +55,14 @@ export default async function RestaurantDetailPage({ params }: Props) {
   }
 
   const hue = hashHue(restaurant.id);
-  const rating = mockRating(restaurant.id);
-  const ratingCount = mockRatingCount(restaurant.id);
+  const reviewSummary = await getRestaurantReviewSummary(restaurant.id);
+  const hasReviews = reviewSummary.reviewCount > 0;
+  const ratingDisplay = hasReviews
+    ? reviewSummary.averageRating.toFixed(1)
+    : null;
+  const ratingCountDisplay = hasReviews
+    ? reviewSummary.reviewCount
+    : null;
   const deliveryFee = mockDeliveryFee(restaurant.id);
   const eta = mockEta(restaurant.id);
   const cuisineType = inferCuisineType(restaurant);
@@ -139,8 +146,14 @@ export default async function RestaurantDetailPage({ params }: Props) {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3.5 md:px-8">
           <div className="flex items-center gap-1.5">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-semibold text-foreground">{rating}</span>
-            <span className="text-xs text-muted-foreground">({ratingCount} avis)</span>
+            {ratingDisplay !== null && ratingCountDisplay !== null ? (
+              <>
+                <span className="text-sm font-semibold text-foreground">{ratingDisplay}</span>
+                <span className="text-xs text-muted-foreground">({ratingCountDisplay} avis)</span>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground">Pas encore d&apos;avis</span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
@@ -221,14 +234,6 @@ function hashCode(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
   return Math.abs(h);
-}
-
-function mockRating(id: string): string {
-  return (4 + (hashCode(id) % 10) / 10).toFixed(1);
-}
-
-function mockRatingCount(id: string): number {
-  return 50 + (hashCode(id) % 450);
 }
 
 function mockDeliveryFee(id: string): number {

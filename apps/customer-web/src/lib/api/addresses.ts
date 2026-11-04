@@ -4,10 +4,15 @@ import { authFetch } from './auth';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
+export interface AddressesResponse {
+  data: ApiAddress[];
+  defaultAddressId: string | null;
+}
+
 /**
- * Get current user's addresses (requires auth).
+ * Get current user's addresses and default address id (requires auth).
  */
-export async function getMyAddresses(): Promise<ApiAddress[]> {
+export async function getMyAddresses(): Promise<AddressesResponse> {
   const res = await authFetch(`${API_BASE}/api/v1/users/me/addresses`);
 
   if (res.status === 401) {
@@ -20,9 +25,11 @@ export async function getMyAddresses(): Promise<ApiAddress[]> {
 
   const json = await res.json();
   const arr = Array.isArray(json) ? json : json.items ?? json.data ?? [];
+  const defaultAddressId = json.defaultAddressId ?? null;
 
   const parsed = z.array(AddressSchema).safeParse(arr);
-  return parsed.success ? parsed.data : (arr as ApiAddress[]);
+  const data = parsed.success ? parsed.data : (arr as ApiAddress[]);
+  return { data, defaultAddressId };
 }
 
 export class AuthRequiredError extends Error {

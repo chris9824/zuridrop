@@ -134,3 +134,36 @@ export const updateDriverProfile = (data: {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
+
+/* ── Reviews (driver reputation) ─────────────────── */
+
+export interface DriverReviewSummary {
+  averageRating: number;
+  reviewCount: number;
+}
+
+export interface DriverReview {
+  id: string;
+  orderId: string;
+  type: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  customer?: { firstName?: string; lastName?: string };
+}
+
+export interface DriverReviewsResponse {
+  data: DriverReview[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  averageRating: number;
+  reviewCount: number;
+}
+
+export const getMyDriverSummary = () =>
+  api<DriverReviewSummary>('/api/v1/reviews/drivers/me/summary');
+
+export const getMyDriverReviews = (page = 1, limit = 10) =>
+  api<DriverReviewsResponse>(`/api/v1/reviews/drivers/me?page=${page}&limit=${limit}`);

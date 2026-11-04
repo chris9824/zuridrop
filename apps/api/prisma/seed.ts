@@ -176,6 +176,23 @@ async function main() {
   });
   console.log('  ✅ Address for customer');
 
+  // ─── Address for customer2 (coordonnées pour suivi en direct) ───
+  await prisma.address.upsert({
+    where: { id: 'seed-address-2' },
+    update: { latitude: 5.3400, longitude: -4.0180 },
+    create: {
+      id: 'seed-address-2',
+      userId: customer2.id,
+      label: 'Bureau',
+      street: '78 Avenue Noguès',
+      city: 'Abidjan',
+      country: "Côte d'Ivoire",
+      latitude: 5.3400,
+      longitude: -4.0180,
+    },
+  });
+  console.log('  ✅ Address for customer2 (lat/lng pour tracking)');
+
   // ─── Restaurant ───────────────────────────────────────
 
   const restaurant = await prisma.restaurant.upsert({
@@ -335,22 +352,62 @@ async function main() {
     console.log(`  ✅ Menu Item: ${mi.name}`);
   }
 
-  // ─── Promotion ────────────────────────────────────────
+  // ─── Promotions ────────────────────────────────────────
 
+  const { PromotionType } = await import('@prisma/client');
+
+  const welcome10Data = {
+    description: '10% de réduction sur votre première commande',
+    type: PromotionType.PERCENT,
+    value: 10,
+    isActive: true,
+    startsAt: new Date('2025-01-01'),
+    expiresAt: new Date('2026-12-31'),
+    minOrderAmount: 5000,
+    maxUses: 1000,
+    maxUsesPerUser: 1,
+  };
   await prisma.promotion.upsert({
     where: { code: 'WELCOME10' },
-    update: {},
-    create: {
-      code: 'WELCOME10',
-      description: '10% de réduction sur votre première commande',
-      discount: 10,
-      isPercent: true,
-      isActive: true,
-      startsAt: new Date('2025-01-01'),
-      expiresAt: new Date('2026-12-31'),
-    },
+    update: welcome10Data,
+    create: { code: 'WELCOME10', ...welcome10Data },
   });
   console.log('  ✅ Promotion: WELCOME10');
+
+  const freeDeliveryData = {
+    description: 'Livraison gratuite',
+    type: PromotionType.FREE_DELIVERY,
+    value: 0,
+    isActive: true,
+    startsAt: new Date('2025-01-01'),
+    expiresAt: new Date('2026-12-31'),
+    minOrderAmount: 8000,
+    maxUses: 500,
+  };
+  await prisma.promotion.upsert({
+    where: { code: 'FREEDELIVERY' },
+    update: freeDeliveryData,
+    create: { code: 'FREEDELIVERY', ...freeDeliveryData },
+  });
+  console.log('  ✅ Promotion: FREEDELIVERY');
+
+  const save2000Data = {
+    description: '2000 FCFA de réduction',
+    type: PromotionType.FIXED_AMOUNT,
+    value: 2000,
+    isActive: true,
+    startsAt: new Date('2025-01-01'),
+    expiresAt: new Date('2026-12-31'),
+    minOrderAmount: 10000,
+    maxUses: 200,
+    maxUsesPerUser: 2,
+  };
+  await prisma.promotion.upsert({
+    where: { code: 'SAVE2000' },
+    update: save2000Data,
+    create: { code: 'SAVE2000', ...save2000Data },
+  });
+  console.log('  ✅ Promotion: SAVE2000');
 
   console.log('\n🎉 Seed completed!');
   console.log('\n📋 Test accounts (password: Test1234!):');

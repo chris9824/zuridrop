@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import { RefreshCw } from 'lucide-react';
 import { isLoggedIn } from '@/lib/api/auth';
-import { getMe, getMyDeliveries, getHistory, type Delivery, type DriverAvailability } from '@/lib/api/driver';
+import { getMe, getMyDeliveries, getHistory, getMyDriverSummary, type Delivery, type DriverAvailability } from '@/lib/api/driver';
 import { isToday } from '@/lib/format';
 import { usePolling } from '@/hooks/use-polling';
 
@@ -23,14 +23,16 @@ export default function DriverDashboard() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [todayCount, setTodayCount] = useState(0);
   const [todayEarnings, setTodayEarnings] = useState(0);
+  const [ratingSummary, setRatingSummary] = useState<{ averageRating: number; reviewCount: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
-      const [me, mine, history] = await Promise.all([
+      const [me, mine, history, summary] = await Promise.all([
         getMe(),
         getMyDeliveries(),
         getHistory(),
+        getMyDriverSummary().catch(() => null),
       ]);
       setDriverName(`${me.firstName} ${me.lastName}`);
       setAvailability(me.availability);
@@ -41,6 +43,7 @@ export default function DriverDashboard() {
       );
       setTodayCount(todayDone.length);
       setTodayEarnings(todayDone.reduce((s, d) => s + d.deliveryFee, 0));
+      setRatingSummary(summary);
     } catch (err: unknown) {
       if (err instanceof Error && err.message === 'AUTH_REQUIRED') {
         router.push('/driver/login');
@@ -80,11 +83,12 @@ export default function DriverDashboard() {
         {/* Online / Offline hero card */}
         <DriverOnlineCard availability={availability} onChanged={setAvailability} />
 
-        {/* Today's stats */}
+        {/* Today's stats + rating */}
         <DriverStatsCard
           todayCount={todayCount}
           todayEarnings={todayEarnings}
           activeCount={deliveries.length}
+          ratingSummary={ratingSummary}
         />
 
         {/* Active missions */}

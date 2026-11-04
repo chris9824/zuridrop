@@ -17,6 +17,7 @@ export interface CreateOrderPayload {
   items: { menuItemId: string; quantity: number }[];
   paymentMethod: 'CASH' | 'CARD' | 'MOBILE_MONEY';
   notes?: string;
+  promoCode?: string;
 }
 
 export async function createOrder(payload: CreateOrderPayload): Promise<ApiOrderResponse> {

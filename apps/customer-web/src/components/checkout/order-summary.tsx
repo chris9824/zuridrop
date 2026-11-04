@@ -1,13 +1,20 @@
 'use client';
 
 import { useCart } from '@/components/cart/cart-provider';
+import type { ValidatePromoResult } from '@/lib/api/promotions';
 
-const DELIVERY_FEE_PLACEHOLDER = 500;
+const DELIVERY_FEE = 500;
 
-export function OrderSummary() {
+interface OrderSummaryProps {
+  appliedPromo?: ValidatePromoResult | null;
+}
+
+export function OrderSummary({ appliedPromo = null }: OrderSummaryProps) {
   const { items, subtotal, restaurantName } = useCart();
 
-  const total = subtotal + DELIVERY_FEE_PLACEHOLDER;
+  const deliveryFee = DELIVERY_FEE;
+  const discountAmount = appliedPromo?.discountAmount ?? 0;
+  const total = Math.max(0, subtotal + deliveryFee - discountAmount);
 
   return (
     <div className="space-y-4">
@@ -47,8 +54,18 @@ export function OrderSummary() {
       {/* Delivery fee */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">Frais de livraison</span>
-        <span className="text-foreground">{DELIVERY_FEE_PLACEHOLDER.toLocaleString('fr-FR')} F</span>
+        <span className="text-foreground">{deliveryFee.toLocaleString('fr-FR')} F</span>
       </div>
+
+      {/* Promo discount */}
+      {discountAmount > 0 && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-green-600 dark:text-green-400">Réduction promo</span>
+          <span className="font-medium text-green-600 dark:text-green-400">
+            -{discountAmount.toLocaleString('fr-FR')} F
+          </span>
+        </div>
+      )}
 
       {/* Divider */}
       <div className="border-t border-border" />

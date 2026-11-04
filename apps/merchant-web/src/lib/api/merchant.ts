@@ -220,3 +220,36 @@ export const createMenuItem = (data: { restaurantId: string; name: string; price
 
 export const getMe = () =>
   api<{ id: string; email: string; firstName: string; lastName: string; role: string }>('/api/v1/users/me');
+
+/* ── Reviews (restaurant) ───────────────────────── */
+
+export interface RestaurantReviewSummary {
+  averageRating: number;
+  reviewCount: number;
+}
+
+export interface RestaurantReview {
+  id: string;
+  orderId: string;
+  type: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  customer?: { firstName?: string; lastName?: string };
+}
+
+export interface RestaurantReviewsResponse {
+  data: RestaurantReview[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  averageRating: number;
+  reviewCount: number;
+}
+
+export const getRestaurantReviewSummary = (restaurantId: string) =>
+  api<RestaurantReviewSummary>(`/api/v1/reviews/restaurants/${restaurantId}/summary`);
+
+export const getRestaurantReviews = (restaurantId: string, page = 1, limit = 10) =>
+  api<RestaurantReviewsResponse>(`/api/v1/reviews/restaurants/${restaurantId}?page=${page}&limit=${limit}`);

@@ -6,11 +6,13 @@ import { motion } from 'framer-motion';
 import {
   ShoppingBag, Clock, ChefHat, Bell, DollarSign,
   TrendingUp, ArrowRight, Store, CheckCircle, Wallet,
-  Activity, XCircle, Percent, Calendar, Trophy,
+  Activity, XCircle, Percent, Calendar, Trophy, Star, MessageSquare,
 } from 'lucide-react';
 import {
   getIncomingOrders, getDashboardStats, getMyRestaurants,
+  getRestaurantReviewSummary, getRestaurantReviews,
   type Order, type Restaurant, type DashboardStats,
+  type RestaurantReviewSummary, type RestaurantReview,
 } from '@/lib/api/merchant';
 import { StatsCard } from '@/components/merchant/stats-card';
 import { OrderCard } from '@/components/merchant/order-card';
@@ -48,6 +50,8 @@ export default function DashboardPage() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [pending, setPending] = useState<Order[]>([]);
   const [metrics, setMetrics] = useState<DashboardStats>(EMPTY_METRICS);
+  const [reviewSummary, setReviewSummary] = useState<RestaurantReviewSummary | null>(null);
+  const [recentReviews, setRecentReviews] = useState<RestaurantReview[]>([]);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -58,8 +62,26 @@ export default function DashboardPage() {
       ]);
 
       setPending(inc.data);
-      if (rests.length > 0) setRestaurant(rests[0]);
+      const firstRestaurant = rests.length > 0 ? rests[0] : null;
+      if (firstRestaurant) setRestaurant(firstRestaurant);
       setMetrics(stats);
+
+      if (firstRestaurant?.id) {
+        try {
+          const [summaryRes, reviewsRes] = await Promise.all([
+            getRestaurantReviewSummary(firstRestaurant.id),
+            getRestaurantReviews(firstRestaurant.id, 1, 5),
+          ]);
+          setReviewSummary(summaryRes);
+          setRecentReviews(reviewsRes.data ?? []);
+        } catch {
+          setReviewSummary(null);
+          setRecentReviews([]);
+        }
+      } else {
+        setReviewSummary(null);
+        setRecentReviews([]);
+      }
     } catch (err) {
       console.error('[Dashboard] Failed to fetch stats:', err);
       /* keep previous metrics on error */
@@ -284,7 +306,70 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Section 5 : Top plats vendus ─────────────── */}
+        {/* ── Section 5 : Avis clients ─────────────────── */}
+        {restaurant && (
+          <div>
+            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Avis clients
+            </h2>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-white/[0.06] bg-card p-5"
+            >
+              {reviewSummary && reviewSummary.reviewCount > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                      <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+                      <span className="text-xl font-bold text-foreground">
+                        {reviewSummary.averageRating.toFixed(1)}
+                      </span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      ({reviewSummary.reviewCount} avis)
+                    </span>
+                  </div>
+                  {recentReviews.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                      <p className="text-xs font-semibold text-muted-foreground">Derniers avis</p>
+                      {recentReviews.map((r) => (
+                        <div
+                          key={r.id}
+                          className="rounded-xl bg-white/[0.02] px-4 py-2.5"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-amber-400">
+                              {'★'.repeat(Math.round(r.rating))}{'☆'.repeat(5 - Math.round(r.rating))}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {r.customer?.firstName || r.customer?.lastName
+                                ? `${r.customer.firstName ?? ''} ${r.customer.lastName ?? ''}`.trim()
+                                : 'Client'}
+                            </span>
+                          </div>
+                          {r.comment && (
+                            <p className="mt-1 text-sm text-foreground">{r.comment}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <MessageSquare className="h-10 w-10 text-muted-foreground/40" />
+                  <p className="mt-2 text-sm text-muted-foreground">Pas encore d&apos;avis</p>
+                  <p className="text-[11px] text-muted-foreground/60">
+                    Les avis laissés après livraison apparaîtront ici
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+
+        {/* ── Section 6 : Top plats vendus ─────────────── */}
         <div>
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
             Top plats vendus

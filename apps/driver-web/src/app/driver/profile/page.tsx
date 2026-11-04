@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   LogOut, Mail, Truck, User, Phone, Save, Loader2,
-  Car, Hash, Power, Package, DollarSign,
+  Car, Hash, Power, Package, DollarSign, Star, MessageSquare,
 } from 'lucide-react';
 import { isLoggedIn, clearToken } from '@/lib/api/auth';
-import { getMe, updateDriverProfile, setAvailability, getHistory, type DriverProfile } from '@/lib/api/driver';
+import { getMe, updateDriverProfile, setAvailability, getHistory, getMyDriverSummary, getMyDriverReviews, type DriverProfile, type DriverReviewSummary, type DriverReview } from '@/lib/api/driver';
 import { BottomNav } from '@/components/driver/bottom-nav';
 import { useToast } from '@/components/driver/toast';
 import { cn } from '@/lib/cn';
@@ -18,6 +18,8 @@ export default function DriverProfilePage() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<DriverProfile | null>(null);
   const [stats, setStats] = useState<{ deliveriesCount: number; totalEarnings: number } | null>(null);
+  const [reviewSummary, setReviewSummary] = useState<DriverReviewSummary | null>(null);
+  const [recentReviews, setRecentReviews] = useState<DriverReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -39,12 +41,19 @@ export default function DriverProfilePage() {
     try {
       // Utiliser getMe (users/me) qui fonctionne sur le dashboard, plutôt que getDriverProfile
       // pour éviter les déconnexions inexpliquées sur la page profil
-      const [me, history] = await Promise.all([getMe(), getHistory().catch(() => [])]);
+      const [me, history, summaryRes, reviewsRes] = await Promise.all([
+        getMe(),
+        getHistory().catch(() => []),
+        getMyDriverSummary().catch(() => null),
+        getMyDriverReviews(1, 5).catch(() => null),
+      ]);
       const delivered = Array.isArray(history) ? history.filter((d: { status: string }) => d.status === 'DELIVERED') : [];
       setStats({
         deliveriesCount: delivered.length,
         totalEarnings: delivered.reduce((sum: number, d: { deliveryFee: number }) => sum + (d.deliveryFee ?? 0), 0),
       });
+      setReviewSummary(summaryRes);
+      setRecentReviews(reviewsRes?.data ?? []);
       const data: DriverProfile = {
         id: me.id,
         email: me.email,
@@ -279,6 +288,67 @@ export default function DriverProfilePage() {
             </div>
           </motion.div>
         )}
+
+        {/* Réputation (avis clients) */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.035 }}
+          className="rounded-2xl border border-white/[0.06] bg-card p-4"
+        >
+          <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <Star className="h-3.5 w-3.5" />
+            Réputation
+          </h3>
+          {reviewSummary && reviewSummary.reviewCount > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+                  <span className="text-xl font-bold text-foreground">
+                    {reviewSummary.averageRating.toFixed(1)}
+                  </span>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  ({reviewSummary.reviewCount} avis)
+                </span>
+              </div>
+              {recentReviews.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                  <p className="text-[11px] font-semibold text-muted-foreground">Derniers avis</p>
+                  {recentReviews.map((r) => (
+                    <div
+                      key={r.id}
+                      className="rounded-xl bg-white/[0.02] px-3 py-2.5"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-amber-400 text-sm">
+                          {'★'.repeat(Math.round(r.rating))}{'☆'.repeat(5 - Math.round(r.rating))}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {r.customer?.firstName || r.customer?.lastName
+                            ? `${r.customer.firstName ?? ''} ${r.customer.lastName ?? ''}`.trim()
+                            : 'Client'}
+                        </span>
+                      </div>
+                      {r.comment && (
+                        <p className="mt-1 text-sm text-foreground">{r.comment}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <MessageSquare className="h-8 w-8 text-muted-foreground/40" />
+              <p className="mt-2 text-sm text-muted-foreground">Pas encore d&apos;avis</p>
+              <p className="text-[11px] text-muted-foreground/60">
+                Les avis de vos clients apparaîtront ici après les livraisons
+              </p>
+            </div>
+          )}
+        </motion.div>
 
         {/* Driver info */}
         <motion.div

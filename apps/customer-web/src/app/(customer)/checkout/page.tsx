@@ -13,7 +13,9 @@ import { createOrder, RestaurantClosedError } from '@/lib/api/orders';
 import type { ApiAddress } from '@/lib/api/schemas';
 import { AddressSelector } from '@/components/checkout/address-selector';
 import { OrderSummary } from '@/components/checkout/order-summary';
+import { PromoCodeInput } from '@/components/checkout/promo-code-input';
 import { LoginForm } from '@/components/checkout/login-form';
+import type { ValidatePromoResult } from '@/lib/api/promotions';
 import { cn } from '@/lib/utils';
 import { getRestaurantAvailability, type Availability } from '@/lib/availability';
 
@@ -29,7 +31,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectAfterLogin = searchParams.get('from');
-  const { items, restaurantId, clear } = useCart();
+  const { items, restaurantId, subtotal, clear } = useCart();
 
   // Auth state
   const [authenticated, setAuthenticated] = useState(false);
@@ -52,6 +54,7 @@ export default function CheckoutPage() {
   // Form
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [notes, setNotes] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<ValidatePromoResult | null>(null);
 
   // Submit
   const [submitting, setSubmitting] = useState(false);
@@ -96,10 +99,10 @@ export default function CheckoutPage() {
     setAddressLoading(true);
     setAddressError(null);
     try {
-      const addrs = await getMyAddresses();
+      const { data: addrs, defaultAddressId } = await getMyAddresses();
       setAddresses(addrs);
       if (addrs.length > 0 && !selectedAddressId) {
-        setSelectedAddressId(addrs[0].id);
+        setSelectedAddressId(defaultAddressId && addrs.some((a) => a.id === defaultAddressId) ? defaultAddressId : addrs[0].id);
       }
     } catch (err) {
       if (err instanceof AuthRequiredError) {
@@ -110,7 +113,7 @@ export default function CheckoutPage() {
     } finally {
       setAddressLoading(false);
     }
-  }, [selectedAddressId]);
+  }, []);
 
   useEffect(() => {
     if (authenticated) {
@@ -132,6 +135,7 @@ export default function CheckoutPage() {
         items: items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.qty })),
         paymentMethod,
         notes: notes.trim() || undefined,
+        promoCode: appliedPromo?.valid ? appliedPromo.promoCode : undefined,
       });
       clear();
       router.push(`/orders/${order.id}`);
@@ -307,7 +311,14 @@ export default function CheckoutPage() {
             <div className="lg:col-span-2">
               <div className="sticky top-20 space-y-5 rounded-2xl border border-border bg-card p-5">
                 <h2 className="text-base font-semibold text-foreground">Résumé de la commande</h2>
-                <OrderSummary />
+                <OrderSummary appliedPromo={appliedPromo} />
+                <PromoCodeInput
+                  subtotal={subtotal}
+                  deliveryFee={500}
+                  restaurantId={restaurantId}
+                  appliedPromo={appliedPromo}
+                  onApplied={setAppliedPromo}
+                />
 
                 {/* Error */}
                 {submitError && (

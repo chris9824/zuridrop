@@ -45,3 +45,11 @@ coverage/
 
 # Turbo (if added later)
 .turbo/
+
+# Local database backups and sensitive files
+backups/
+*.dump
+*.sql.gz
+*.sqlite
+*.sqlite3
+*.db

@@ -21,4 +21,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   avatarUrl?: string;
+
+  @ApiPropertyOptional({ example: 'clxxx...', description: 'ID de l\'adresse à définir par défaut' })
+  @IsOptional()
+  @IsString()
+  defaultAddressId?: string;
 }

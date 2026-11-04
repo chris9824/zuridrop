@@ -6,5 +6,6 @@ import { PrismaService } from '../../common/services/prisma.service';
 @Module({
   controllers: [PromotionsController],
   providers: [PromotionsService, PrismaService],
+  exports: [PromotionsService],
 })
 export class PromotionsModule {}

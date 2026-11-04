@@ -7,6 +7,18 @@
 
 The project demonstrates the architecture and development of a multi-role delivery ecosystem, including restaurant management, order processing, driver dispatch, delivery tracking, promotions, and customer reviews.
 
+## 🎬 Video Demonstration
+
+Watch ZuriDrop in action — a complete food delivery
+workflow across the customer, merchant, driver,
+and admin interfaces.
+
+**[▶ Watch the Full-Stack Demo](https://github.com/chris9824/zuridrop/releases/tag/v1.0.0-demo)**
+
+The demo covers restaurant browsing, order placement,
+merchant processing, driver delivery, live tracking,
+admin analytics, and customer reviews.
+
 ## Key Features
 
 ### Customer Application
@@ -274,7 +286,6 @@ Current development priorities include:
 - Preparing production deployment.
 - Validating mobile application functionality.
 - Improving performance, reliability, and security.
-- Creating a complete product demonstration.
 
 ZuriDrop is a portfolio project and is not currently presented as a production-deployed commercial service.
 

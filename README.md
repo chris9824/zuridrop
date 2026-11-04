@@ -1,52 +1,56 @@
+
 # ZuriDrop
 
 ### Full-Stack Food Delivery Platform
 
-**ZuriDrop** is a multi-application food delivery platform built with a TypeScript monorepo architecture. It brings together customers, restaurant merchants, delivery drivers, and platform administrators through dedicated applications connected to a centralized backend.
+**ZuriDrop** is a multi-application food delivery platform built with a TypeScript monorepo architecture. It connects customers, restaurant merchants, delivery drivers, and platform administrators through dedicated applications powered by a centralized backend.
 
-The project explores the architecture and development of a multi-role delivery system, including order management, restaurant operations, delivery workflows, promotions, and customer reviews.
+The project demonstrates the architecture and development of a multi-role delivery ecosystem, including restaurant management, order processing, driver dispatch, delivery tracking, promotions, and customer reviews.
 
 ## Key Features
 
 ### Customer Application
 - Browse restaurants and explore available menus.
-- Manage customer account information and delivery addresses.
-- Place orders and access order history.
-- Follow order progress through a tracking interface.
+- Manage customer accounts and delivery addresses.
+- Place orders and view order history.
+- Track order progress and deliveries.
 - Apply promotional codes during checkout.
-- Submit restaurant and delivery reviews.
+- Rate restaurants and delivery drivers after completed orders.
 
 ### Merchant Dashboard
 - Manage restaurant information and settings.
-- Manage menu items.
-- Review incoming orders.
-- Access a kitchen workflow and order history.
+- Create and update menu items.
+- Receive and process incoming orders.
+- Manage kitchen preparation workflows.
+- View order history and restaurant operations.
 - Update restaurant availability and preparation settings.
 
 ### Driver Dashboard
 - Access delivery assignments.
-- View delivery details.
-- Manage delivery workflow.
-- Review delivery history.
+- View delivery details and active missions.
+- Manage pickup and delivery workflows.
+- Confirm completed deliveries.
+- Review delivery history and earnings.
 - Manage driver profile information.
 
 ### Administration Dashboard
-- Access platform administration views.
-- Review customers, restaurants, drivers, and orders.
 - Monitor platform activity through a centralized dashboard.
+- View customers, restaurants, drivers, and orders.
+- Track order statistics and platform revenue.
+- Access administrative management interfaces.
 
 ## Technology Stack
 
 | Layer | Technologies |
 |---|---|
 | Backend | NestJS, Node.js, TypeScript |
-| Web applications | Next.js 14, React, TypeScript |
+| Frontend | Next.js 14, React, TypeScript |
 | Database | PostgreSQL 16, Prisma ORM |
-| Caching and infrastructure | Redis 7, Docker |
-| Mobile application | Expo, React Native |
-| Monorepo | pnpm workspaces |
-| API documentation | Swagger / OpenAPI |
-| Code quality | ESLint, Prettier, TypeScript |
+| Caching and Infrastructure | Redis 7, Docker |
+| Mobile Application | Expo, React Native |
+| Monorepo | pnpm Workspaces |
+| API Documentation | Swagger / OpenAPI |
+| Code Quality | ESLint, Prettier, TypeScript |
 
 ## Architecture
 
@@ -62,11 +66,70 @@ zuridrop/
 ├── packages/
 │   ├── shared/           # Shared types and utilities
 │   └── ui/               # Shared UI components
+├── docs/
+│   └── screenshots/      # Application screenshots
 ├── docker-compose.yml
 └── pnpm-workspace.yaml
 ```
 
-The backend provides centralized business logic and data access. Each web application serves a distinct user role.
+The NestJS backend centralizes business logic, authentication, data persistence, and order management.
+
+Each frontend application provides a dedicated experience for its corresponding user role.
+
+## Screenshots
+
+Explore ZuriDrop through its four dedicated web applications and its end-to-end delivery workflow.
+
+### 1. Customer Experience
+
+Browse restaurants, explore menus, and place orders through the customer application.
+
+![ZuriDrop Customer Application](docs/screenshots/01-customer-home.png)
+
+### 2. Merchant Dashboard
+
+Manage incoming orders, preparation workflows, and restaurant operations.
+
+![ZuriDrop Merchant Dashboard](docs/screenshots/02-merchant-dashboard.png)
+
+### 3. Driver Dashboard
+
+Handle delivery assignments, manage active missions, and monitor earnings.
+
+![ZuriDrop Driver Dashboard](docs/screenshots/03-driver-dashboard.png)
+
+### 4. Administration Dashboard
+
+Monitor platform activity, restaurants, drivers, orders, and revenue.
+
+![ZuriDrop Admin Dashboard](docs/screenshots/04-admin-dashboard.png)
+
+### 5. Order Tracking
+
+Follow an order through its delivery journey using map-based tracking.
+
+![ZuriDrop Order Tracking](docs/screenshots/05-order-tracking.png)
+
+### 6. Customer Reviews
+
+Customers can evaluate restaurants and delivery drivers after completing an order.
+
+![ZuriDrop Customer Reviews](docs/screenshots/06-customer-reviews.png)
+
+## End-to-End Order Workflow
+
+ZuriDrop supports a complete order lifecycle connecting customers, restaurants, and delivery drivers.
+
+1. **Order Placement:** A customer selects a restaurant, adds items to their cart, and places an order.
+2. **Merchant Confirmation:** The restaurant receives and accepts the order.
+3. **Order Preparation:** The merchant prepares the food and marks it ready for pickup.
+4. **Driver Assignment:** An available driver receives the delivery assignment.
+5. **Pickup:** The driver collects the prepared order from the restaurant.
+6. **Delivery Tracking:** The customer follows the delivery progress.
+7. **Delivery Confirmation:** The driver confirms that the order has been delivered.
+8. **Customer Feedback:** The customer can rate the restaurant and delivery driver.
+
+This workflow has been successfully tested locally across the customer, merchant, driver, and administration applications.
 
 ## Local Development
 
@@ -77,7 +140,7 @@ The backend provides centralized business logic and data access. Each web applic
 - Docker 24+
 - Docker Compose 2+
 
-### Clone the repository
+### Clone the Repository
 
 ```bash
 git clone https://github.com/chris9824/zuridrop.git
@@ -85,37 +148,56 @@ cd zuridrop
 pnpm install
 ```
 
-### Configure environment variables
+### Configure Environment Variables
 
 Use the provided `.env.example` files as configuration templates.
 
-Configure the PostgreSQL connection, Redis connection, API endpoints, and any required application-specific settings.
+Configure the required environment variables for:
 
-Do not commit real credentials or production secrets.
+- PostgreSQL database connection.
+- Redis connection.
+- API endpoints.
+- Authentication settings.
+- Application-specific services.
 
-### Start the infrastructure
+Do not commit credentials, API keys, or production secrets.
+
+### Start Infrastructure
 
 ```bash
 pnpm docker:up
 ```
 
-For a **fresh development database**, generate the Prisma client and initialize the schema according to the project's database configuration.
+### Prepare the Database
+
+Generate the Prisma client:
 
 ```bash
 pnpm db:generate
 ```
 
-**Important:** Do not run database synchronization or reset commands against an existing database without reviewing their effects and creating a backup.
+For a fresh development database, initialize the schema using the project's Prisma configuration.
 
-### Run the applications
+**Important:** Review database migration or synchronization commands before running them. Back up existing databases to prevent accidental data loss.
 
-Start the services using the corresponding workspace commands:
+### Run the Applications
+
+Start each application in a separate terminal:
 
 ```bash
+# Backend API
 pnpm --filter @zuridrop/api dev
+
+# Customer Application
 pnpm --filter @zuridrop/customer-web dev
+
+# Merchant Dashboard
 pnpm --filter @zuridrop/merchant-web dev
+
+# Driver Dashboard
 pnpm --filter @zuridrop/driver-web dev
+
+# Administration Dashboard
 pnpm --filter @zuridrop/admin-web dev
 ```
 
@@ -124,15 +206,15 @@ pnpm --filter @zuridrop/admin-web dev
 | Service | URL |
 |---|---|
 | Backend API | http://localhost:3001 |
-| API documentation | http://localhost:3001/api/docs |
-| Customer application | http://localhost:3004 |
-| Merchant dashboard | http://localhost:3002 |
-| Driver dashboard | http://localhost:3005 |
-| Admin dashboard | http://localhost:3003 |
+| API Documentation | http://localhost:3001/api/docs |
+| Customer Application | http://localhost:3004 |
+| Merchant Dashboard | http://localhost:3002 |
+| Driver Dashboard | http://localhost:3005 |
+| Administration Dashboard | http://localhost:3003 |
 
 ## Build Verification
 
-The backend and all four Next.js web applications have successfully completed individual production builds during local development.
+The NestJS backend and all four Next.js web applications have successfully completed individual production builds during local development.
 
 ```bash
 pnpm --filter @zuridrop/api build
@@ -142,36 +224,63 @@ pnpm --filter @zuridrop/driver-web build
 pnpm --filter @zuridrop/admin-web build
 ```
 
-Successful builds do not replace end-to-end functional testing or production deployment validation.
+The Expo mobile application has not yet undergone the same build verification.
 
-## Screenshots and Demo
+Successful builds do not replace comprehensive automated testing or production deployment validation.
 
-Screenshots of the customer, merchant, driver, and administration interfaces will be added here.
+## Functional Testing
 
-A complete demonstration of the customer-to-delivery workflow is also planned.
+The following functionality has been verified during local development:
+
+- Customer order creation.
+- Merchant order acceptance and preparation.
+- Driver pickup and delivery confirmation.
+- Customer delivery tracking.
+- Completed order status updates.
+- Administration dashboard statistics updates.
+- Customer review submission and retrieval through the API.
+
+A complete delivery scenario was successfully executed across the platform's four web applications.
 
 ## Engineering Focus
 
-ZuriDrop demonstrates experience with:
+ZuriDrop demonstrates practical experience with:
 
 - Full-stack TypeScript development.
-- Modular backend architecture.
-- Multi-role application design.
-- REST API integration.
-- Relational database modeling.
-- Order and delivery workflows.
-- Monorepo organization.
+- Modular backend architecture with NestJS.
+- REST API design and integration.
+- Multi-role authentication and authorization.
+- Relational database modeling with Prisma.
+- PostgreSQL and Redis integration.
+- Multi-application frontend development.
+- Order lifecycle and delivery workflow management.
+- Monorepo architecture using pnpm.
 - Containerized development environments.
+- API documentation using Swagger.
+- Functional testing and debugging.
 
 ## Project Status
 
-**Active development — portfolio project.**
+**Active Development — Portfolio Project**
 
-The backend and four web applications have passed local production build checks. Functional verification, deployment preparation, and documentation improvements remain ongoing.
+The backend and four web applications have passed local production build checks.
+
+Core delivery workflows have been tested successfully in a local development environment.
+
+Current development priorities include:
+
+- Improving the user experience and interface consistency.
+- Expanding automated test coverage.
+- Preparing production deployment.
+- Validating mobile application functionality.
+- Improving performance, reliability, and security.
+- Creating a complete product demonstration.
+
+ZuriDrop is a portfolio project and is not currently presented as a production-deployed commercial service.
 
 ## Repository
 
-https://github.com/chris9824/zuridrop
+**GitHub:** https://github.com/chris9824/zuridrop
 
 ## License
 
